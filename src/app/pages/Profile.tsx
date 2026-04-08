@@ -10,7 +10,6 @@ import { Switch } from "../components/ui/switch";
 import { useState, useEffect } from "react";
 import axios from "axios";
 
-// 🔥 Backend Base URL
 const BASE_URL = "https://chef-backend-1.onrender.com";
 
 export default function Profile() {
@@ -21,13 +20,15 @@ export default function Profile() {
   const [chef, setChef] = useState<any>(null);
   const [loading, setLoading] = useState(true);
 
-  // 🔥 Fetch Profile Data
+  // 🔥 FETCH PROFILE
   useEffect(() => {
     const fetchProfile = async () => {
       try {
+        const token = localStorage.getItem("token");
+
         const res = await axios.get(`${BASE_URL}/users/me`, {
           headers: {
-            Authorization: `Bearer ${localStorage.getItem("token")}`,
+            Authorization: `Bearer ${token}`,
           },
         });
 
@@ -42,7 +43,7 @@ export default function Profile() {
     fetchProfile();
   }, []);
 
-  // 🔄 Loading
+  // 🔄 LOADING
   if (loading) {
     return (
       <div className="flex items-center justify-center h-screen">
@@ -82,14 +83,18 @@ export default function Profile() {
         <div className="bg-white rounded-3xl p-6 shadow-lg border border-gray-100">
           <div className="flex items-start gap-4 mb-5">
 
-            {/* 🔥 Profile Image */}
+            {/* 🔥 PROFILE IMAGE FIX */}
             <div className="w-24 h-24 rounded-3xl overflow-hidden bg-gray-200">
               <img
                 src={
-                  chef.profile_image
-                    ? `${BASE_URL}/${chef.profile_image}`
+                  chef?.profile_image && chef.profile_image !== ""
+                    ? chef.profile_image
                     : "https://via.placeholder.com/100"
                 }
+                onError={(e: any) => {
+                  e.target.src = "https://via.placeholder.com/100";
+                }}
+                alt="profile"
                 className="w-full h-full object-cover"
               />
             </div>
@@ -97,27 +102,24 @@ export default function Profile() {
             {/* Info */}
             <div className="flex-1">
               <h2 className="text-2xl font-bold text-gray-800 mb-1">
-                {chef.name}
+                {chef?.name || "No Name"}
               </h2>
 
               <div className="flex items-center gap-4 text-sm text-gray-600 mb-2">
 
-                {/* ⭐ Rating */}
                 <div className="flex items-center">
                   <Star className="w-4 h-4 text-yellow-500 mr-1" />
                   <span className="font-medium">
-                    {chef.avg_rating || 0}
+                    {chef?.avg_rating || 0}
                   </span>
                 </div>
 
-                {/* 📍 Location */}
                 <div className="flex items-center">
                   <MapPin className="w-4 h-4 mr-1" />
-                  <span>{chef.location || "No location"}</span>
+                  <span>{chef?.location || "No location"}</span>
                 </div>
               </div>
 
-              {/* Edit */}
               <button
                 onClick={() => navigate("/profile/edit")}
                 className="flex items-center gap-2 px-4 py-2 bg-orange-500 text-white rounded-xl text-sm"
@@ -128,17 +130,15 @@ export default function Profile() {
             </div>
           </div>
 
-          {/* Bio */}
           <p className="text-gray-600 text-sm mb-4">
-            {chef.bio || "No bio added"}
+            {chef?.bio || "No bio added"}
           </p>
 
-          {/* Specialties */}
           <div className="flex flex-wrap gap-2">
-            {chef.specialties ? (
-              chef.specialties.split(",").map((item: string) => (
+            {chef?.specialties ? (
+              chef.specialties.split(",").map((item: string, i: number) => (
                 <span
-                  key={item}
+                  key={i}
                   className="px-3 py-1 bg-orange-50 text-orange-600 rounded-full text-xs"
                 >
                   {item}
@@ -187,7 +187,7 @@ export default function Profile() {
           <div className="bg-white p-5 rounded-3xl text-center shadow">
             <Award className="w-8 h-8 mx-auto text-orange-500 mb-2" />
             <p className="text-2xl font-bold">
-              {chef.total_orders || 0}
+              {chef?.total_orders || 0}
             </p>
             <p className="text-xs text-gray-500">Orders</p>
           </div>
@@ -195,7 +195,7 @@ export default function Profile() {
           <div className="bg-white p-5 rounded-3xl text-center shadow">
             <Star className="w-8 h-8 mx-auto text-yellow-500 mb-2" />
             <p className="text-2xl font-bold">
-              {chef.avg_rating || 0}
+              {chef?.avg_rating || 0}
             </p>
             <p className="text-xs text-gray-500">Rating</p>
           </div>
@@ -203,7 +203,7 @@ export default function Profile() {
           <div className="bg-white p-5 rounded-3xl text-center shadow">
             📅
             <p className="text-sm font-bold">
-              {chef.join_date
+              {chef?.join_date
                 ? new Date(chef.join_date).getFullYear()
                 : "-"}
             </p>

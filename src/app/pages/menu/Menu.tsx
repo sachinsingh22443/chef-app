@@ -56,11 +56,16 @@ export default function Menu() {
     }
   };
 
+  // 🔥 FIX: FormData use for PUT
   const handleToggleStock = async (item: any) => {
     try {
-      await API.put(`/menu/${item.id}`, {
-        quantity: item.inStock ? 0 : 10,
+      const form = new FormData();
+      form.append("quantity", item.inStock ? "0" : "10");
+
+      await API.put(`/menu/${item.id}`, form, {
+        headers: { "Content-Type": "multipart/form-data" },
       });
+
       fetchMenus();
     } catch (err) {
       console.log(err);
@@ -74,11 +79,14 @@ export default function Menu() {
   const handleMarkAllInStock = async () => {
     try {
       await Promise.all(
-        menuItems.map((item) =>
-          API.put(`/menu/${item.id}`, {
-            quantity: item.quantity > 0 ? item.quantity : 10,
-          })
-        )
+        menuItems.map((item) => {
+          const form = new FormData();
+          form.append("quantity", item.quantity > 0 ? String(item.quantity) : "10");
+
+          return API.put(`/menu/${item.id}`, form, {
+            headers: { "Content-Type": "multipart/form-data" },
+          });
+        })
       );
       fetchMenus();
     } catch (err) {
@@ -89,11 +97,14 @@ export default function Menu() {
   const handleBulkEdit = async () => {
     try {
       await Promise.all(
-        menuItems.map((item) =>
-          API.put(`/menu/${item.id}`, {
-            price: item.price + 10,
-          })
-        )
+        menuItems.map((item) => {
+          const form = new FormData();
+          form.append("price", String(item.price + 10));
+
+          return API.put(`/menu/${item.id}`, form, {
+            headers: { "Content-Type": "multipart/form-data" },
+          });
+        })
       );
       fetchMenus();
     } catch (err) {
@@ -157,13 +168,16 @@ export default function Menu() {
             <div key={item.id} className="bg-white rounded-3xl p-5 shadow-lg border">
               <div className="flex gap-4">
 
-                {/* ✅ IMAGE FIX */}
+                {/* 🔥 IMAGE FIX (CLOUDINARY) */}
                 <div className="flex gap-2 flex-shrink-0">
                   {item.image_urls && item.image_urls.length > 0 ? (
                     item.image_urls.slice(0, 3).map((img: string, i: number) => (
                       <img
                         key={i}
-                        src={`https://chef-backend-1.onrender.com/uploads/${img}`}
+                        src={img} // ✅ DIRECT URL
+                        onError={(e: any) => {
+                          e.target.src = "https://via.placeholder.com/100";
+                        }}
                         alt={item.name}
                         className="w-20 h-20 object-cover rounded-xl"
                       />
@@ -175,7 +189,7 @@ export default function Menu() {
                   )}
                 </div>
 
-                {/* Details */}
+                {/* बाकी UI SAME */}
                 <div className="flex-1">
                   <h3 className="font-bold">{item.name}</h3>
                   <p className="text-sm text-gray-500">{item.description}</p>
@@ -190,7 +204,6 @@ export default function Menu() {
                   </div>
                 </div>
 
-                {/* Actions */}
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
                     <button>
@@ -213,8 +226,6 @@ export default function Menu() {
             </div>
           ))}
         </div>
-
-        {/* Bulk Actions */}
         <div className="mt-6 bg-white rounded-3xl p-5 shadow-lg">
           <h3 className="font-bold mb-4">Quick Actions</h3>
           <div className="grid grid-cols-2 gap-3">
@@ -226,7 +237,7 @@ export default function Menu() {
             </button>
           </div>
         </div>
-
+        {/* Bulk Actions SAME */}
       </div>
     </div>
   );

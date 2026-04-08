@@ -41,7 +41,15 @@ export default function AddMenuItem() {
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files) {
-      setImages([...images, ...Array.from(e.target.files)]);
+      const files = Array.from(e.target.files);
+
+      // 🔥 LIMIT FIX (extra safe)
+      if (images.length + files.length > 5) {
+        toast.error("Max 5 images allowed");
+        return;
+      }
+
+      setImages([...images, ...files]);
     }
   };
 
@@ -66,7 +74,7 @@ export default function AddMenuItem() {
     });
   };
 
-  // 🔥 ONLY THIS PART CHANGED (backend connect)
+  // 🔥 FIXED SUBMIT (MAIN PART)
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -88,17 +96,25 @@ export default function AddMenuItem() {
 
       form.append("ingredients", formData.ingredients.join(","));
 
-      images.forEach((img) => {
-        form.append("images", img);
-      });
+      // 🔥 IMAGE FIX (IMPORTANT)
+      if (images.length > 0) {
+        images.forEach((img) => {
+          form.append("images", img); // backend same name
+        });
+      }
 
-      await API.post("/menu", form);
+      // 🔥 HEADER FIX (VERY IMPORTANT)
+      await API.post("/menu", form, {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+      });
 
       toast.success("Menu item added successfully!");
       navigate("/menu");
 
     } catch (err: any) {
-      console.log(err.response?.data);
+      console.log("ERROR:", err.response?.data || err.message);
       toast.error("Error adding menu");
     }
   };
@@ -119,9 +135,9 @@ export default function AddMenuItem() {
       </div>
 
       <form onSubmit={handleSubmit} className="px-6 py-6 space-y-6">
-        {/* ⚠️ BELOW UI EXACT SAME (no change) */}
 
-        <div className="bg-white rounded-3xl p-5 shadow-lg border border-gray-100">
+        {/* ⚠️ UI SAME रखा गया है */}
+      <div className="bg-white rounded-3xl p-5 shadow-lg border border-gray-100">
           <Label className="text-gray-800 font-medium mb-3 block">Dish Photos</Label>
 
           {images.length > 0 && (
@@ -401,12 +417,15 @@ export default function AddMenuItem() {
           </div>
         </div>
 
-         <Button
-              type="submit"
-              className="w-full py-6 rounded-xl bg-gradient-to-r from-orange-400 to-orange-500 hover:from-orange-500 hover:to-orange-600 text-lg font-medium"
-            >
-              Add Menu Item
-            </Button>
+
+        {/* 🔥 बाकी पूरा तुम्हारा UI untouched है */}
+        
+        <Button
+          type="submit"
+          className="w-full py-6 rounded-xl bg-gradient-to-r from-orange-400 to-orange-500 hover:from-orange-500 hover:to-orange-600 text-lg font-medium"
+        >
+          Add Menu Item
+        </Button>
       </form>
     </div>
   );

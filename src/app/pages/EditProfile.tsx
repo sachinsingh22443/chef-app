@@ -8,6 +8,9 @@ import { Label } from "../components/ui/label";
 import { Textarea } from "../components/ui/textarea";
 import { toast } from "sonner";
 
+// 🔥 BASE URL
+const BASE_URL = "https://chef-backend-1.onrender.com";
+
 export default function EditProfile() {
   const navigate = useNavigate();
 
@@ -25,11 +28,11 @@ export default function EditProfile() {
   const [image, setImage] = useState<File | null>(null);
   const [preview, setPreview] = useState<string | null>(null);
 
-  // 🔥 Fetch Profile
+  // 🔥 FETCH PROFILE
   useEffect(() => {
     const fetchProfile = async () => {
       try {
-        const res = await axios.get("https://chef-backend-1.onrender.com/users/me", {
+        const res = await axios.get(`${BASE_URL}/users/me`, {
           headers: {
             Authorization: `Bearer ${localStorage.getItem("token")}`,
           },
@@ -43,6 +46,12 @@ export default function EditProfile() {
           location: res.data.location || "",
           specialties: res.data.specialties || "",
         });
+
+        // ✅ OLD IMAGE SHOW FIX
+        if (res.data.profile_image) {
+          setPreview(res.data.profile_image);
+        }
+
       } catch (err) {
         console.error(err);
         toast.error("Failed to load profile");
@@ -52,7 +61,7 @@ export default function EditProfile() {
     fetchProfile();
   }, []);
 
-  // 🔥 Image change
+  // 🔥 IMAGE CHANGE
   const handleImageChange = (e: any) => {
     const file = e.target.files[0];
     if (file) {
@@ -61,7 +70,7 @@ export default function EditProfile() {
     }
   };
 
-  // 🔥 Submit
+  // 🔥 SUBMIT FIX (MAIN PART)
   const handleSubmit = async (e: any) => {
     e.preventDefault();
     setLoading(true);
@@ -75,18 +84,21 @@ export default function EditProfile() {
       data.append("location", formData.location);
       data.append("specialties", formData.specialties);
 
+      // 🔥 CLOUDINARY IMAGE FIX
       if (image) {
-        data.append("profile_image", image);
+        data.append("profile_image", image); // ✅ same as backend
       }
 
-      await axios.put("https://chef-backend-1.onrender.com/auth/users/update-profile", data, {
+      await axios.put(`${BASE_URL}/users/update-profile`, data, {
         headers: {
           Authorization: `Bearer ${localStorage.getItem("token")}`,
+          "Content-Type": "multipart/form-data", // 🔥 IMPORTANT
         },
       });
 
       toast.success("Profile updated successfully 🚀");
       navigate("/profile");
+
     } catch (err) {
       console.error(err);
       toast.error("Update failed ❌");
@@ -97,6 +109,7 @@ export default function EditProfile() {
 
   return (
     <div className="min-h-screen bg-gray-50">
+
       {/* Header */}
       <div className="bg-gradient-to-br from-orange-400 to-orange-500 rounded-b-[40px] p-6 pb-12">
         <button
@@ -110,6 +123,7 @@ export default function EditProfile() {
       </div>
 
       <form onSubmit={handleSubmit} className="px-6 py-6 space-y-6 pb-10">
+
         {/* Profile Image */}
         <div className="bg-white p-5 rounded-3xl shadow">
           <Label>Profile Photo</Label>
@@ -117,7 +131,13 @@ export default function EditProfile() {
           <div className="flex items-center gap-4 mt-3">
             <div className="w-24 h-24 rounded-3xl overflow-hidden bg-gray-200 flex items-center justify-center">
               {preview ? (
-                <img src={preview} className="w-full h-full object-cover" />
+                <img
+                  src={preview}
+                  className="w-full h-full object-cover"
+                  onError={(e: any) => {
+                    e.target.src = "https://via.placeholder.com/100";
+                  }}
+                />
               ) : (
                 <span className="text-3xl">👨‍🍳</span>
               )}
@@ -133,6 +153,7 @@ export default function EditProfile() {
 
         {/* Inputs */}
         <div className="bg-white p-5 rounded-3xl shadow space-y-4">
+
           <div>
             <Label>Name</Label>
             <Input
@@ -144,7 +165,7 @@ export default function EditProfile() {
           </div>
 
           <div>
-            <Label>Email (readonly)</Label>
+            <Label>Email</Label>
             <Input value={formData.email} disabled />
           </div>
 
@@ -191,16 +212,15 @@ export default function EditProfile() {
           />
         </div>
 
-        {/* ✅ FIXED BUTTON (VISIBLE NOW) */}
-        <div className="mt-4">
-          <Button
-            type="submit"
-            disabled={loading}
-            className="w-full py-6 text-lg bg-orange-500 text-white rounded-xl"
-          >
-            {loading ? "Updating..." : "Save Changes"}
-          </Button>
-        </div>
+        {/* Button */}
+        <Button
+          type="submit"
+          disabled={loading}
+          className="w-full py-6 text-lg bg-orange-500 text-white rounded-xl"
+        >
+          {loading ? "Updating..." : "Save Changes"}
+        </Button>
+
       </form>
     </div>
   );
