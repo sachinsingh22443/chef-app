@@ -12,6 +12,7 @@ const API = axios.create({
   baseURL: "https://chef-backend-1.onrender.com",
 });
 
+// 🔥 TOKEN ATTACH
 API.interceptors.request.use((config) => {
   const token = localStorage.getItem("token");
   if (token) config.headers.Authorization = `Bearer ${token}`;
@@ -20,6 +21,9 @@ API.interceptors.request.use((config) => {
 
 export default function AddMenuItem() {
   const navigate = useNavigate();
+
+  const [loading, setLoading] = useState(false);
+
   const [formData, setFormData] = useState({
     name: "",
     description: "",
@@ -34,16 +38,17 @@ export default function AddMenuItem() {
     quantity: "",
     ingredients: [] as string[],
   });
+
   const [images, setImages] = useState<File[]>([]);
   const [newIngredient, setNewIngredient] = useState("");
 
   const categories = ["Healthy", "Protein-Rich", "Tiffin", "Special Diet"];
 
+  // 🔥 IMAGE UPLOAD
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files) {
       const files = Array.from(e.target.files);
 
-      // 🔥 LIMIT FIX (extra safe)
       if (images.length + files.length > 5) {
         toast.error("Max 5 images allowed");
         return;
@@ -57,6 +62,7 @@ export default function AddMenuItem() {
     setImages(images.filter((_, i) => i !== index));
   };
 
+  // 🔥 INGREDIENT ADD
   const handleAddIngredient = () => {
     if (newIngredient.trim()) {
       setFormData({
@@ -74,11 +80,18 @@ export default function AddMenuItem() {
     });
   };
 
-  // 🔥 FIXED SUBMIT (MAIN PART)
+  // 🔥 SUBMIT
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
+    if (images.length === 0) {
+      toast.error("Please upload at least 1 image");
+      return;
+    }
+
     try {
+      setLoading(true);
+
       const form = new FormData();
 
       form.append("name", formData.name);
@@ -94,17 +107,17 @@ export default function AddMenuItem() {
       form.append("carbs", String(formData.carbs));
       form.append("fats", String(formData.fats));
 
-      form.append("ingredients", formData.ingredients.join(","));
-
-      // 🔥 IMAGE FIX (IMPORTANT)
-      if (images.length > 0) {
-        images.forEach((img) => {
-          form.append("images", img); // backend same name
-        });
+      // ✅ ingredients safe
+      if (formData.ingredients.length > 0) {
+        form.append("ingredients", formData.ingredients.join(","));
       }
 
-      // 🔥 HEADER FIX (VERY IMPORTANT)
-      await API.post("/menu", form, {
+      // 🔥 IMPORTANT FIX (IMAGE SEND)
+      images.forEach((img) => {
+        form.append("images", img);
+      });
+
+      await API.post("/menu/", form, {
         headers: {
           "Content-Type": "multipart/form-data",
         },
@@ -114,10 +127,16 @@ export default function AddMenuItem() {
       navigate("/menu");
 
     } catch (err: any) {
-      console.log("ERROR:", err.response?.data || err.message);
-      toast.error("Error adding menu");
+      console.log("ERROR FULL:", err);
+      console.log("ERROR DATA:", err.response?.data);
+
+      toast.error(err.response?.data?.detail || "Error adding menu");
+
+    } finally {
+      setLoading(false);
     }
   };
+
 
   return (
     <div className="min-h-screen bg-gray-50 pb-24">

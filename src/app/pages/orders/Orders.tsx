@@ -233,31 +233,33 @@ export default function Orders() {
           </TabsContent>
 
           {/* SUBSCRIPTIONS (same as before) */}
-          <TabsContent value="subscription" className="space-y-4">
-            {subscriptionOrders.length === 0 ? (
-              <div className="bg-white rounded-3xl p-12 text-center">
-                <div className="text-6xl mb-4">📅</div>
-                <p className="text-gray-500 mb-2">No subscription orders</p>
-                <button
-                  onClick={() => navigate("/subscriptions")}
-                  className="text-orange-500 font-medium"
-                >
-                  View Subscription Settings
-                </button>
-              </div>
-            ) : (
-              subscriptionOrders.map((order) => (
-                <div
-                  key={order.id}
-                  onClick={() => navigate("/subscriptions")}
-                  className="bg-white rounded-3xl p-5 shadow-lg border-2 border-purple-200 cursor-pointer"
-                >
-                  <p className="font-bold">{order.customer}</p>
-                  <p>{order.items}</p>
-                </div>
-              ))
-            )}
-          </TabsContent>
+          {/* SUBSCRIPTIONS */}
+<TabsContent value="subscription" className="space-y-4">
+  {subscriptionOrders.length === 0 ? (
+    <div className="bg-white rounded-3xl p-12 text-center">
+      <div className="text-6xl mb-4">📅</div>
+      <p className="text-gray-500 mb-2">No subscription orders</p>
+      <button
+        onClick={() => navigate("/app/subscriptions")}  // ✅ FIXED
+        className="text-orange-500 font-medium"
+      >
+        View Subscription Settings
+      </button>
+    </div>
+  ) : (
+    subscriptionOrders.map((order) => (
+      <div
+        key={order.id}
+        onClick={() => navigate("/app/subscriptions")}  // ✅ FIXED
+        className="bg-white rounded-3xl p-5 shadow-lg border-2 border-purple-200 cursor-pointer"
+      >
+        <p className="font-bold">{order.customer}</p>
+        <p>{order.items}</p>
+      </div>
+    ))
+  )}
+</TabsContent>
+
 
         </Tabs>
       </div>

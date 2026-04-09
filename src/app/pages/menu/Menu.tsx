@@ -35,11 +35,12 @@ export default function Menu() {
       const res = await API.get("/menu");
 
       const mapped = res.data.map((item: any) => ({
-        ...item,
-        prepTime: item.prep_time,
-        inStock: item.quantity > 0,
-        isVeg: item.food_type === "vegetarian",
-      }));
+      ...item,
+      prepTime: item.prep_time,
+     inStock: item.quantity > 0,
+     quantity: item.quantity, // 🔥 ADD THIS
+    isVeg: item.food_type === "vegetarian",
+    }));
 
       setMenuItems(mapped);
     } catch (err: any) {
@@ -58,48 +59,62 @@ export default function Menu() {
 
   // 🔥 FIX: FormData use for PUT
   const handleToggleStock = async (item: any) => {
-    try {
-      const form = new FormData();
-      form.append("quantity", item.inStock ? "0" : "10");
+  try {
+    const newStock = !item.inStock;
 
-      await API.put(`/menu/${item.id}`, form, {
-        headers: { "Content-Type": "multipart/form-data" },
-      });
+    // 🔥 UI instantly update
+    setMenuItems(prev =>
+      prev.map(i =>
+        i.id === item.id ? { ...i, inStock: newStock } : i
+      )
+    );
 
-      fetchMenus();
-    } catch (err) {
-      console.log(err);
-    }
-  };
+    const form = new FormData();
+    form.append("quantity", newStock ? "10" : "0");
 
+    await API.put(`/menu/${item.id}`, form, {
+      headers: { "Content-Type": "multipart/form-data" },
+    });
+
+  } catch (err) {
+    console.log(err);
+
+    // ❌ rollback if error
+    fetchMenus();
+  }
+};
   const filteredItems = menuItems.filter((item) =>
     item.name.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
   const handleMarkAllInStock = async () => {
-    try {
-      await Promise.all(
-        menuItems.map((item) => {
-          const form = new FormData();
-          form.append("quantity", item.quantity > 0 ? String(item.quantity) : "10");
+  try {
+    await Promise.all(
+      menuItems.map((item) => {
+        const form = new FormData();
 
-          return API.put(`/menu/${item.id}`, form, {
-            headers: { "Content-Type": "multipart/form-data" },
-          });
-        })
-      );
-      fetchMenus();
-    } catch (err) {
-      console.log(err);
-    }
-  };
+        form.append("quantity", "10"); // 🔥 FORCE IN STOCK
+
+        return API.put(`/menu/${item.id}`, form, {
+          headers: { "Content-Type": "multipart/form-data" },
+        });
+      })
+    );
+
+    fetchMenus();
+  } catch (err) {
+    console.log(err);
+  }
+};
+
+
 
   const handleBulkEdit = async () => {
     try {
       await Promise.all(
         menuItems.map((item) => {
           const form = new FormData();
-          form.append("price", String(item.price + 10));
+          form.append("price", String(Math.round(item.price * 1.1)));
 
           return API.put(`/menu/${item.id}`, form, {
             headers: { "Content-Type": "multipart/form-data" },

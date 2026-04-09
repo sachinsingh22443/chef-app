@@ -8,7 +8,6 @@ import { Label } from "../components/ui/label";
 import { Textarea } from "../components/ui/textarea";
 import { toast } from "sonner";
 
-// 🔥 BASE URL
 const BASE_URL = "https://chef-backend-1.onrender.com";
 
 export default function EditProfile() {
@@ -31,10 +30,18 @@ export default function EditProfile() {
   // 🔥 FETCH PROFILE
   useEffect(() => {
     const fetchProfile = async () => {
+      const token = localStorage.getItem("token");
+
+      if (!token) {
+        toast.error("Please login again");
+        navigate("/login");
+        return;
+      }
+
       try {
         const res = await axios.get(`${BASE_URL}/users/me`, {
           headers: {
-            Authorization: `Bearer ${localStorage.getItem("token")}`,
+            Authorization: `Bearer ${token}`,
           },
         });
 
@@ -47,35 +54,50 @@ export default function EditProfile() {
           specialties: res.data.specialties || "",
         });
 
-        // ✅ OLD IMAGE SHOW FIX
         if (res.data.profile_image) {
           setPreview(res.data.profile_image);
         }
 
-      } catch (err) {
-        console.error(err);
+      } catch (err: any) {
+        console.error("FETCH ERROR:", err.response?.data);
         toast.error("Failed to load profile");
       }
     };
 
     fetchProfile();
-  }, []);
+  }, [navigate]);
 
   // 🔥 IMAGE CHANGE
   const handleImageChange = (e: any) => {
     const file = e.target.files[0];
-    if (file) {
-      setImage(file);
-      setPreview(URL.createObjectURL(file));
+
+    if (!file) return;
+
+    // ✅ image validation
+    if (!file.type.startsWith("image/")) {
+      toast.error("Only image files allowed");
+      return;
     }
+
+    setImage(file);
+    setPreview(URL.createObjectURL(file));
   };
 
-  // 🔥 SUBMIT FIX (MAIN PART)
+  // 🔥 SUBMIT
   const handleSubmit = async (e: any) => {
     e.preventDefault();
-    setLoading(true);
+
+    const token = localStorage.getItem("token");
+
+    if (!token) {
+      toast.error("Please login again");
+      navigate("/login");
+      return;
+    }
 
     try {
+      setLoading(true);
+
       const data = new FormData();
 
       data.append("name", formData.name);
@@ -84,24 +106,23 @@ export default function EditProfile() {
       data.append("location", formData.location);
       data.append("specialties", formData.specialties);
 
-      // 🔥 CLOUDINARY IMAGE FIX
       if (image) {
-        data.append("profile_image", image); // ✅ same as backend
+        data.append("profile_image", image);
       }
 
-      await axios.put(`${BASE_URL}/users/update-profile`, data, {
+      await axios.put(`${BASE_URL}/auth/users/update-profile`, data, {
         headers: {
-          Authorization: `Bearer ${localStorage.getItem("token")}`,
-          "Content-Type": "multipart/form-data", // 🔥 IMPORTANT
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "multipart/form-data",
         },
       });
 
       toast.success("Profile updated successfully 🚀");
       navigate("/profile");
 
-    } catch (err) {
-      console.error(err);
-      toast.error("Update failed ❌");
+    } catch (err: any) {
+      console.log("ERROR:", err.response?.data);
+      toast.error(err.response?.data?.detail || "Update failed ❌");
     } finally {
       setLoading(false);
     }
@@ -110,7 +131,7 @@ export default function EditProfile() {
   return (
     <div className="min-h-screen bg-gray-50">
 
-      {/* Header */}
+      {/* HEADER */}
       <div className="bg-gradient-to-br from-orange-400 to-orange-500 rounded-b-[40px] p-6 pb-12">
         <button
           onClick={() => navigate(-1)}
@@ -124,7 +145,7 @@ export default function EditProfile() {
 
       <form onSubmit={handleSubmit} className="px-6 py-6 space-y-6 pb-10">
 
-        {/* Profile Image */}
+        {/* IMAGE */}
         <div className="bg-white p-5 rounded-3xl shadow">
           <Label>Profile Photo</Label>
 
@@ -151,7 +172,7 @@ export default function EditProfile() {
           </div>
         </div>
 
-        {/* Inputs */}
+        {/* FORM */}
         <div className="bg-white p-5 rounded-3xl shadow space-y-4">
 
           <div>
@@ -190,7 +211,7 @@ export default function EditProfile() {
           </div>
         </div>
 
-        {/* Bio */}
+        {/* BIO */}
         <div className="bg-white p-5 rounded-3xl shadow">
           <Label>Bio</Label>
           <Textarea
@@ -201,7 +222,7 @@ export default function EditProfile() {
           />
         </div>
 
-        {/* Specialties */}
+        {/* SPECIALTIES */}
         <div className="bg-white p-5 rounded-3xl shadow">
           <Label>Specialties</Label>
           <Input
@@ -212,7 +233,7 @@ export default function EditProfile() {
           />
         </div>
 
-        {/* Button */}
+        {/* BUTTON */}
         <Button
           type="submit"
           disabled={loading}

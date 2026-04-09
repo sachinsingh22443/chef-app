@@ -20,6 +20,17 @@ export default function Profile() {
   const [chef, setChef] = useState<any>(null);
   const [loading, setLoading] = useState(true);
 
+
+
+   const formatDate = (date: string) => {
+    const d = new Date(date);
+
+    const day = String(d.getDate()).padStart(2, "0");
+    const month = String(d.getMonth() + 1).padStart(2, "0");
+    const year = String(d.getFullYear()).slice(-2);
+
+    return `${day}-${month}-${year}`;
+  };
   // 🔥 FETCH PROFILE
   useEffect(() => {
     const fetchProfile = async () => {
@@ -204,7 +215,7 @@ export default function Profile() {
             📅
             <p className="text-sm font-bold">
               {chef?.join_date
-                ? new Date(chef.join_date).getFullYear()
+                ? formatDate(chef.join_date)
                 : "-"}
             </p>
             <p className="text-xs text-gray-500">Joined</p>
