@@ -14,12 +14,16 @@ export default function Orders() {
   const [completedOrders, setCompletedOrders] = useState<any[]>([]);
   const [subscriptionOrders, setSubscriptionOrders] = useState<any[]>([]);
 
+  const [loadingId, setLoadingId] = useState<string | null>(null); // 🔥 FIX
+
   useEffect(() => {
     fetchOrders();
     fetchSubscriptions();
   }, []);
 
+  // =========================
   // 🔥 FETCH ORDERS
+  // =========================
   const fetchOrders = async () => {
     try {
       const token = localStorage.getItem("token");
@@ -28,14 +32,17 @@ export default function Orders() {
         headers: { Authorization: `Bearer ${token}` },
       });
 
+      const orders = res.data.orders || []; // 🔥 FIX
+
       const newArr: any[] = [];
       const activeArr: any[] = [];
       const completedArr: any[] = [];
 
-      res.data.forEach((o: any) => {
-        const items = o.items?.map((i: any) => `${i.name} x${i.quantity}`).join(", ");
+      orders.forEach((o: any) => {
+        const items = o.items?.length
+          ? o.items.map((i: any) => `${i.name} x${i.quantity}`).join(", ")
+          : "";
 
-        // ✅ 🔥 FIXED DATA MAPPING
         const formatted = {
           id: o.id,
           customer: o.customer_name || "Guest",
@@ -43,7 +50,7 @@ export default function Orders() {
           time: o.created_at
             ? new Date(o.created_at).toLocaleString()
             : "Just now",
-          amount: o.total_price,
+          amount: o.total_price || 0,
           status: o.status,
           prepTime: o.status === "ready" ? "Ready" : "15 min",
           address: o.address || "N/A",
@@ -65,16 +72,25 @@ export default function Orders() {
     }
   };
 
+  // =========================
+  // 🔥 SEARCH FILTER (SAFE)
+  // =========================
   const filterOrders = (orders: any[]) => {
-  return orders.filter((order) =>
-    order.customer.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    order.items.toLowerCase().includes(searchQuery.toLowerCase())
-  );
-};
+    return orders.filter((order) =>
+      (order.customer || "").toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (order.items || "").toLowerCase().includes(searchQuery.toLowerCase())
+    );
+  };
 
-  // 🔥 UPDATE STATUS
+  // =========================
+  // 🔥 UPDATE STATUS (SAFE)
+  // =========================
   const updateStatus = async (id: string, status: string) => {
+    if (loadingId === id) return; // 🔥 prevent spam
+
     try {
+      setLoadingId(id);
+
       const token = localStorage.getItem("token");
 
       await axios.put(
@@ -86,10 +102,14 @@ export default function Orders() {
       fetchOrders();
     } catch (err) {
       console.log("STATUS ERROR:", err);
+    } finally {
+      setLoadingId(null);
     }
   };
 
+  // =========================
   // 🔥 FETCH SUBSCRIPTIONS
+  // =========================
   const fetchSubscriptions = async () => {
     try {
       const token = localStorage.getItem("token");
@@ -98,13 +118,13 @@ export default function Orders() {
         headers: { Authorization: `Bearer ${token}` },
       });
 
-      const mapped = res.data.map((s: any) => ({
+      const mapped = (res.data || []).map((s: any) => ({
         id: s.id,
-        customer: s.customer,
+        customer: s.customer || "Guest",
         plan: s.plan,
         items: `${s.dish} x${s.quantity}`,
         nextDelivery: s.time,
-        amount: s.amount,
+        amount: s.amount || 0,
       }));
 
       setSubscriptionOrders(mapped);
@@ -113,7 +133,6 @@ export default function Orders() {
       console.log("SUB ERROR:", err);
     }
   };
-
   return (
     <div className="min-h-screen bg-gray-50">
 

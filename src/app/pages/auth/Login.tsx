@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState ,useEffect} from "react";
 import { useNavigate } from "react-router";
 import axios from "axios";
 import { Eye, EyeOff } from "lucide-react";
@@ -15,6 +15,13 @@ export default function Login() {
     email: "",
     password: "",
   });
+
+  useEffect(() => {
+  const token = localStorage.getItem("token");
+  if (token) {
+    navigate("/app");
+  }
+}, []);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();

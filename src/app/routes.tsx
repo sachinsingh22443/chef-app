@@ -30,7 +30,14 @@ import Support from "./pages/terms_andconditions/support";
 import NotFound from "./pages/NotFound";
 
 export const router = createBrowserRouter([
-  { path: "/", element: <Navigate to="/auth/signup" /> },
+  {
+  path: "/",
+  element: (
+    localStorage.getItem("token")
+      ? <Navigate to="/app" />
+      : <Navigate to="/auth/login" />
+  ),
+},
 
   // 🔐 AUTH
   {

@@ -1,5 +1,8 @@
 import { useNavigate } from "react-router";
 import { useEffect, useState } from "react";
+import { MapPin } from "lucide-react";
+import Location from "./Location";
+
 import axios from "axios";
 import {
   Package,
@@ -24,11 +27,16 @@ export default function Dashboard() {
   const [weeklyData, setWeeklyData] = useState<any[]>([]);
   const [topDishes, setTopDishes] = useState<any[]>([]);
   const [activeOrders, setActiveOrders] = useState<any[]>([]);
+  const [showLocation, setShowLocation] = useState(false);
+  const [locationName, setLocationName] = useState("Set Kitchen Location");
 
   useEffect(() => {
     fetchDashboard();
   }, []);
 
+  // =========================
+  // 🔥 FETCH DASHBOARD
+  // =========================
   const fetchDashboard = async () => {
     try {
       const token = localStorage.getItem("token");
@@ -40,11 +48,13 @@ export default function Dashboard() {
         },
       });
 
-      setStats(res.data);
-      setWeeklyData(res.data.weekly_data || []);
-      setTopDishes(res.data.top_dishes || []);
+      setStats(res.data || {});
+      setWeeklyData(res.data?.weekly_data || []);
+      setTopDishes(res.data?.top_dishes || []);
 
-      // ✅ Active Orders
+      // =========================
+      // ✅ ORDERS API (FIXED)
+      // =========================
       const ordersRes = await axios.get(
         "https://chef-backend-1.onrender.com/orders/chef-orders",
         {
@@ -54,15 +64,17 @@ export default function Dashboard() {
         }
       );
 
-      const active = ordersRes.data
+      const orders = ordersRes.data?.orders || []; // 🔥 FIX
+
+      const active = orders
         .filter((o: any) =>
           ["accepted", "preparing", "ready"].includes(o.status)
         )
         .map((order: any) => ({
           id: order.id,
-          customer: "Customer",
-          items: order.items.map((i: any) => i.item_name).join(", "),
-          amount: order.total_price,
+          customer: order.customer_name || "Customer",
+          items: order.items?.map((i: any) => i.name).join(", ") || "", // 🔥 FIX
+          amount: order.total_price || 0,
         }));
 
       setActiveOrders(active);
@@ -72,196 +84,223 @@ export default function Dashboard() {
     }
   };
 
+  // =========================
+  // 📍 LOCATION LOAD
+  // =========================
+  useEffect(() => {
+    const saved = localStorage.getItem("location_name");
+    if (saved) setLocationName(saved);
+  }, []);
   return (
-    <div className="min-h-screen bg-gray-50">
+  <div className="min-h-screen bg-gray-50">
 
-      {/* HEADER */}
-      <div className="bg-gradient-to-br from-orange-400 via-orange-300 to-purple-500 rounded-b-[40px] p-6 pb-32">
-        <div className="flex justify-between items-start mb-6">
-          <div>
-            <h1 className="text-3xl font-bold text-white mb-2">
-              Welcome, Chef 👨‍🍳
-            </h1>
-            <p className="text-white/90">Let’s grow your kitchen 🚀</p>
+    {/* HEADER */}
+    <div className="bg-gradient-to-br from-orange-400 via-orange-300 to-purple-500 rounded-b-[40px] p-6 pb-32">
+      <div className="flex justify-between items-start mb-6">
+        
+        {/* LEFT */}
+        <div>
+          <h1 className="text-3xl font-bold text-white mb-2">
+            Welcome, Chef 👨‍🍳
+          </h1>
+          <p className="text-white/90">Let’s grow your kitchen 🚀</p>
+
+          {/* LOCATION */}
+          <div
+            className="flex items-center gap-2 mt-2 cursor-pointer"
+            onClick={() => setShowLocation(true)}
+          >
+            <MapPin className="w-5 h-5 text-white" />
+            <p className="text-white text-sm font-medium">
+              {locationName}
+            </p>
           </div>
+        </div>
+
+        {/* RIGHT */}
+        <button
+          onClick={() => navigate("/notifications")}
+          className="w-12 h-12 bg-white/20 rounded-2xl flex items-center justify-center"
+        >
+          <Bell className="w-6 h-6 text-white" />
+        </button>
+
+      </div>
+    </div>
+
+    <div className="px-6 -mt-24 pb-8">
+
+      {/* STATS */}
+      <div className="grid grid-cols-2 gap-4 mb-6">
+        <div className="bg-white rounded-3xl p-5 shadow-lg">
+          <Package className="w-6 h-6 text-orange-500 mb-2" />
+          <p className="text-gray-500 text-sm">Total Orders</p>
+          <span className="text-3xl font-bold">
+            {stats?.total_orders || 0}
+          </span>
+        </div>
+
+        <div className="bg-white rounded-3xl p-5 shadow-lg">
+          <Star className="w-6 h-6 text-yellow-500 mb-2" />
+          <p className="text-gray-500 text-sm">Avg Rating</p>
+          <span className="text-3xl font-bold">
+            {stats?.avg_rating || 0}
+          </span>
+        </div>
+      </div>
+
+      {/* TODAY EARNINGS */}
+      <div className="bg-white rounded-3xl p-5 shadow-lg mb-6">
+        <IndianRupee className="w-6 h-6 text-purple-600 mb-2" />
+        <p className="text-gray-500 text-sm">Today's Earnings</p>
+        <span className="text-3xl font-bold">
+          ₹{stats?.today_earnings || 0}
+        </span>
+      </div>
+
+      {/* MONTH */}
+      <div className="bg-gradient-to-br from-green-400 to-green-500 rounded-3xl p-6 shadow-lg text-white mb-6">
+        <h3 className="text-xl font-bold mb-4">This Month</h3>
+
+        <p className="text-3xl font-bold mb-2">
+          ₹{stats?.monthly_earnings?.toLocaleString() || 0}
+        </p>
+
+        <div className="grid grid-cols-2 gap-4 pt-4 border-t border-green-300/30">
+          <div>
+            <p className="text-sm">Total Orders</p>
+            <p className="text-2xl font-bold">
+              {stats?.monthly_orders || 0}
+            </p>
+          </div>
+          <div>
+            <p className="text-sm">Avg/Order</p>
+            <p className="text-2xl font-bold">
+              ₹{Math.round(stats?.avg_order_value || 0)}
+            </p>
+          </div>
+        </div>
+      </div>
+
+      {/* GRAPH */}
+      <div className="bg-white rounded-3xl p-5 shadow-lg mb-6">
+        <h3 className="font-bold mb-4">Weekly Performance</h3>
+
+        <ResponsiveContainer width="100%" height={200}>
+          <LineChart data={weeklyData}>
+            <CartesianGrid strokeDasharray="3 3" />
+            <XAxis dataKey="day" />
+            <YAxis />
+            <Tooltip />
+            <Line type="monotone" dataKey="earnings" stroke="#f97316" />
+          </LineChart>
+        </ResponsiveContainer>
+      </div>
+
+      {/* QUICK ACTIONS */}
+      <div className="mb-6">
+        <h3 className="font-bold mb-4">Quick Actions</h3>
+
+        <div className="grid grid-cols-2 gap-4">
+          <button
+            onClick={() => navigate("/menu/add")}
+            className="bg-orange-500 rounded-3xl p-6 text-white"
+          >
+            Add Menu Item
+          </button>
 
           <button
-            onClick={() => navigate("/notifications")}
-            className="w-12 h-12 bg-white/20 rounded-2xl flex items-center justify-center"
+            onClick={() => navigate("/tomorrow-special")}
+            className="bg-purple-500 rounded-3xl p-6 text-white"
           >
-            <Bell className="w-6 h-6 text-white" />
+            Tomorrow Special
           </button>
         </div>
       </div>
 
-      <div className="px-6 -mt-24 pb-8">
+      {/* ACTIVE ORDERS */}
+      <div>
+        <h3 className="font-bold mb-4">Active Orders</h3>
 
-        {/* STATS */}
-        <div className="grid grid-cols-2 gap-4 mb-6">
-
-          <div className="bg-white rounded-3xl p-5 shadow-lg">
-            <Package className="w-6 h-6 text-orange-500 mb-2" />
-            <p className="text-gray-500 text-sm">Total Orders</p>
-            <span className="text-3xl font-bold">
-              {stats?.total_orders || 0}
-            </span>
-          </div>
-
-          <div className="bg-white rounded-3xl p-5 shadow-lg">
-            <Star className="w-6 h-6 text-yellow-500 mb-2" />
-            <p className="text-gray-500 text-sm">Avg Rating</p>
-            <span className="text-3xl font-bold">
-              {stats?.avg_rating || 0}
-            </span>
-          </div>
-        </div>
-
-        {/* TODAY EARNINGS */}
-        <div className="bg-white rounded-3xl p-5 shadow-lg mb-6">
-          <IndianRupee className="w-6 h-6 text-purple-600 mb-2" />
-          <p className="text-gray-500 text-sm">Today's Earnings</p>
-          <span className="text-3xl font-bold">
-            ₹{stats?.today_earnings || 0}
-          </span>
-        </div>
-
-        {/* 🔥 THIS MONTH */}
-        <div className="bg-gradient-to-br from-green-400 to-green-500 rounded-3xl p-6 shadow-lg text-white mb-6">
-          <div className="flex justify-between items-start mb-6">
-            <h3 className="text-xl font-bold">This Month</h3>
-            <IndianRupee className="w-8 h-8" />
-          </div>
-
-          <div className="mb-4">
-            <p className="text-3xl font-bold mb-2">
-              ₹{stats?.monthly_earnings?.toLocaleString() || 0}
-            </p>
-            <p className="text-green-100 text-sm">
-              Performance overview
-            </p>
-          </div>
-
-          <div className="grid grid-cols-2 gap-4 pt-4 border-t border-green-300/30">
-            <div>
-              <p className="text-green-100 text-sm mb-1">Total Orders</p>
-              <p className="text-2xl font-bold">
-                {stats?.monthly_orders || 0}
-              </p>
+        {activeOrders.length === 0 ? (
+          <p>No active orders</p>
+        ) : (
+          activeOrders.map((order) => (
+            <div
+              key={order.id}
+              onClick={() => navigate(`/orders/${order.id}`)}
+              className="bg-white p-4 mb-3 rounded-xl shadow cursor-pointer"
+            >
+              <p className="font-bold">{order.customer}</p>
+              <p className="text-sm">{order.items}</p>
+              <p>₹{order.amount}</p>
             </div>
-            <div>
-              <p className="text-green-100 text-sm mb-1">Avg/Order</p>
-              <p className="text-2xl font-bold">
-                ₹{Math.round(stats?.avg_order_value || 0)}
-              </p>
-            </div>
-          </div>
-        </div>
+          ))
+        )}
+      </div>
 
-        {/* 📊 WEEKLY GRAPH */}
-        <div className="bg-white rounded-3xl p-5 shadow-lg mb-6">
-          <h3 className="font-bold mb-4">Weekly Performance</h3>
+    </div>
 
-          <ResponsiveContainer width="100%" height={200}>
-            <LineChart data={weeklyData}>
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="day" />
-              <YAxis />
-              <Tooltip />
-              <Line type="monotone" dataKey="earnings" stroke="#f97316" />
-            </LineChart>
-          </ResponsiveContainer>
-        </div>
+    {/* ✅ LOCATION MODAL (FIXED POSITION) */}
+    {showLocation && (
+  <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
+    <Location
+      onLocationSelect={async (lat, lng, city) => {
+  try {
+    setLocationName(city);
+
+    const token = localStorage.getItem("token");
+
+    if (!token) {
+      console.error("❌ No token found");
+      return;
+    }
+
+    const res = await fetch(
+      "http://127.0.0.1:8000/menu/chef/set-location",
+      {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/x-www-form-urlencoded",
+        },
+        body: new URLSearchParams({
+          latitude: lat.toString(),
+          longitude: lng.toString(),
+          location: city,
+        }),
+      }
+    );
+
+    if (!res.ok) {
+      throw new Error("Failed to save location");
+    }
+
+    const data = await res.json();
+
+    console.log("🔥 Location saved:", data);
+
+    localStorage.setItem("lat", lat.toString());
+    localStorage.setItem("lng", lng.toString());
+    localStorage.setItem("location_name", city);
+
+    alert("Location saved successfully ✅");
+
+  } catch (err) {
+    console.error("❌ Location error:", err);
+  } finally {
+    setShowLocation(false);
+  }
+  }}
 
 
-        {/* 🔥 QUICK ACTIONS */}
-<div className="mb-6">
-  <h3 className="font-bold text-gray-800 mb-4">Quick Actions</h3>
+      onClose={() => setShowLocation(false)}
+    />
+  </div>
+)}
 
-  <div className="grid grid-cols-2 gap-4">
 
-    {/* Add Menu */}
-    <button
-      onClick={() => navigate("/menu/add")}
-      className="bg-gradient-to-br from-orange-400 to-orange-500 rounded-3xl p-6 text-white flex flex-col items-center justify-center active:scale-95 shadow-lg"
-    >
-      <div className="text-4xl mb-2">+</div>
-      <span className="font-medium">Add Menu Item</span>
-    </button>
-
-    {/* Tomorrow Special */}
-    <button
-      onClick={() => navigate("/tomorrow-special")}
-      className="bg-gradient-to-br from-purple-500 to-purple-600 rounded-3xl p-6 text-white flex flex-col items-center justify-center active:scale-95 shadow-lg"
-    >
-      <div className="text-4xl mb-2">⭐</div>
-      <span className="font-medium">Tomorrow Special</span>
-    </button>
 
   </div>
-</div>
-
-        {/* 🏆 TOP DISHES */}
-        <div className="bg-white rounded-3xl p-5 shadow-lg border border-gray-100 mb-6">
-          <h3 className="font-bold text-gray-800 mb-4">
-            Top Performing Dishes
-          </h3>
-
-          <div className="space-y-3">
-            {topDishes.length === 0 ? (
-              <p className="text-gray-500 text-sm">
-                No data available
-              </p>
-            ) : (
-              topDishes.map((dish, index) => (
-                <div
-                  key={index}
-                  className="flex items-center justify-between p-3 bg-gray-50 rounded-xl"
-                >
-                  <div>
-                    <p className="font-medium text-gray-800">
-                      {dish.name}
-                    </p>
-                    <p className="text-sm text-gray-500">
-                      {dish.orders} orders
-                    </p>
-                  </div>
-
-                  <span className="font-bold text-green-600">
-                    ₹{dish.revenue.toLocaleString()}
-                  </span>
-                </div>
-              ))
-            )}
-          </div>
-        </div>
-
-        {/* ACTIVE ORDERS */}
-        <div>
-          <div className="flex justify-between mb-4">
-            <h3 className="font-bold">Active Orders</h3>
-            <button onClick={() => navigate("/orders")}>
-              View All →
-            </button>
-          </div>
-
-          {activeOrders.length === 0 ? (
-            <p>No active orders</p>
-          ) : (
-            activeOrders.map((order) => (
-              <div
-                key={order.id}
-                onClick={() => navigate(`/orders/${order.id}`)}
-                className="bg-white p-4 mb-3 rounded-xl shadow cursor-pointer"
-              >
-                <p className="font-bold">{order.customer}</p>
-                <p className="text-sm">{order.items}</p>
-                <p>₹{order.amount}</p>
-              </div>
-            ))
-          )}
-        </div>
-
-      </div>
-    </div>
-  );
+);
 }

@@ -18,7 +18,7 @@ export default function Notifications() {
     try {
       const token = localStorage.getItem("token");
 
-      const res = await axios.get("http://localhost:9009/notifications/", {
+      const res = await axios.get("https://chef-backend-1.onrender.com/notifications/", {
         headers: {
           Authorization: `Bearer ${token}`,
         },
@@ -35,7 +35,7 @@ export default function Notifications() {
   // ✅ MARK SINGLE AS READ
   const markAsRead = async (id: string) => {
     try {
-      await axios.put(`http://localhost:9009/notifications/${id}/read`);
+      await axios.put(`https://chef-backend-1.onrender.com/notifications/${id}/read`);
       fetchNotifications();
     } catch (err) {
       console.log(err);
