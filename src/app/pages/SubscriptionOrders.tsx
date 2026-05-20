@@ -21,15 +21,15 @@ export default function SubscriptionOrders() {
     try {
       const token = localStorage.getItem("token");
 
-      const subRes = await axios.get("https://chef-backend-1.onrender.com/subscriptions/", {
+      const subRes = await axios.get("https://chef-backend-qh12.onrender.com/subscriptions/", {
         headers: { Authorization: `Bearer ${token}` },
       });
 
-      const todayRes = await axios.get("https://chef-backend-1.onrender.com/subscriptions/today", {
+      const todayRes = await axios.get("https://chef-backend-qh12.onrender.com/subscriptions/today", {
         headers: { Authorization: `Bearer ${token}` },
       });
 
-      const upcomingRes = await axios.get("https://chef-backend-1.onrender.com/subscriptions/upcoming", {
+      const upcomingRes = await axios.get("https://chef-backend-qh12.onrender.com/subscriptions/upcoming", {
         headers: { Authorization: `Bearer ${token}` },
       });
 

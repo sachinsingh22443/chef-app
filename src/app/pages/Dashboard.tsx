@@ -42,7 +42,7 @@ export default function Dashboard() {
       const token = localStorage.getItem("token");
 
       // ✅ Dashboard API
-      const res = await axios.get("https://chef-backend-1.onrender.com/dashboard/", {
+      const res = await axios.get("https://chef-backend-qh12.onrender.com/dashboard/", {
         headers: {
           Authorization: `Bearer ${token}`,
         },
@@ -56,7 +56,7 @@ export default function Dashboard() {
       // ✅ ORDERS API (FIXED)
       // =========================
       const ordersRes = await axios.get(
-        "https://chef-backend-1.onrender.com/orders/chef-orders",
+        "https://chef-backend-qh12.onrender.com/orders/chef-orders",
         {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -252,12 +252,12 @@ export default function Dashboard() {
     const token = localStorage.getItem("token");
 
     if (!token) {
-      console.error("❌ No token found");
+      console.error(" No token found");
       return;
     }
 
     const res = await fetch(
-      "http://127.0.0.1:8000/menu/chef/set-location",
+      "https://chef-backend-qh12.onrender.com/menu/chef/set-location",
       {
         method: "POST",
         headers: {

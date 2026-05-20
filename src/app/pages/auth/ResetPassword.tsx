@@ -15,7 +15,7 @@ export default function ResetPassword() {
     try {
       setLoading(true);
 
-      await axios.post("https://chef-backend-1.onrender.com/auth/reset-password", {
+      await axios.post("https://chef-backend-qh12.onrender.com/auth/reset-password", {
         token,
         new_password: password,
       });

@@ -30,7 +30,7 @@ export default function Login() {
       setLoading(true);
 
       const res = await axios.post(
-        "https://chef-backend-1.onrender.com/auth/login",
+        "https://chef-backend-qh12.onrender.com/auth/login",
         {
           email: formData.email,
           password: formData.password,

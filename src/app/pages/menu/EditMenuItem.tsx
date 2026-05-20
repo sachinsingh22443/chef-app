@@ -10,7 +10,7 @@ import { Switch } from "../../components/ui/switch";
 import { toast } from "sonner";
 
 const API = axios.create({
-  baseURL: "https://chef-backend-1.onrender.com",
+  baseURL: "https://chef-backend-qh12.onrender.com",
 });
 
 API.interceptors.request.use((config) => {

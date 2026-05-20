@@ -28,7 +28,7 @@ export default function Orders() {
     try {
       const token = localStorage.getItem("token");
 
-      const res = await axios.get("https://chef-backend-1.onrender.com/orders/chef-orders", {
+      const res = await axios.get("https://chef-backend-qh12.onrender.com/orders/chef-orders", {
         headers: { Authorization: `Bearer ${token}` },
       });
 
@@ -94,7 +94,7 @@ export default function Orders() {
       const token = localStorage.getItem("token");
 
       await axios.put(
-        `https://chef-backend-1.onrender.com/orders/${id}/status?status=${status}`,
+        `https://chef-backend-qh12.onrender.com/orders/${id}/status?status=${status}`,
         {},
         { headers: { Authorization: `Bearer ${token}` } }
       );
@@ -114,7 +114,7 @@ export default function Orders() {
     try {
       const token = localStorage.getItem("token");
 
-      const res = await axios.get("https://chef-backend-1.onrender.com/subscriptions/", {
+      const res = await axios.get("https://chef-backend-qh12.onrender.com/subscriptions/", {
         headers: { Authorization: `Bearer ${token}` },
       });
 

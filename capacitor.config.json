@@ -1,5 +1,9 @@
 {
-  "appId": "com.eatunity.app",
-  "appName": "Eat Unity",
-  "webDir": "dist"
+  "appId": "com.chefapp.app",
+  "appName": "Chef App",
+  "webDir": "dist",
+  "server": {
+    "url": "https://chef-app-wine.vercel.app/",
+    "cleartext": true
+  }
 }

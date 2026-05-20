@@ -33,7 +33,7 @@ export default function OrderDetail() {
     const token = localStorage.getItem("token"); // 🔥
 
     const res = await axios.get(
-      `https://chef-backend-1.onrender.com/orders/${orderId}`,
+      `https://chef-backend-qh12.onrender.com/orders/${orderId}`,
       {
         headers: {
           Authorization: `Bearer ${token}`,
@@ -54,7 +54,7 @@ export default function OrderDetail() {
     const token = localStorage.getItem("token"); // 🔥
 
     await axios.put(
-      `https://chef-backend-1.onrender.com/orders/${orderId}/status?status=${newStatus}`,
+      `https://chef-backend-qh12.onrender.com/orders/${orderId}/status?status=${newStatus}`,
       {},
       {
         headers: {

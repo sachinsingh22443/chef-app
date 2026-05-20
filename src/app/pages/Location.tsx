@@ -26,12 +26,20 @@ export default function Location({ onLocationSelect, onClose }: Props) {
 
     const data = await res.json();
 
-    const city =
-      data.address?.city ||
-      data.address?.state ||
-      "Unknown";
+    const address = data.address;
 
-    return city;
+const city =
+  address?.village ||
+  address?.town ||
+  address?.city ||
+  address?.county ||
+  address?.state_district ||
+  address?.state ||
+  "Unknown";
+
+const fullLocation = `${city}, ${address?.state || ""}`;
+
+    return fullLocation;
 
   } catch (err) {
     console.error("❌ Reverse geocoding error:", err);

@@ -21,7 +21,7 @@ export default function Settings() {
   useEffect(() => {
     const fetchUser = async () => {
       try {
-        const res = await axios.get("https://chef-backend-1.onrender.com/users/me", {
+        const res = await axios.get("https://chef-backend-qh12.onrender.com/users/me", {
           headers: {
             Authorization: `Bearer ${localStorage.getItem("token")}`,
           },

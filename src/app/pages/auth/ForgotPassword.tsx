@@ -18,7 +18,7 @@ export default function ForgotPassword() {
     try {
       setLoading(true);
 
-      await axios.post("https://chef-backend-1.onrender.com/auth/forgot-password", {
+      await axios.post("https://chef-backend-qh12.onrender.com/auth/forgot-password", {
         email: email,
       });
 

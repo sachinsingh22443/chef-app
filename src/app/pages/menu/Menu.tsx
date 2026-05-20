@@ -12,7 +12,7 @@ import {
 } from "../../components/ui/dropdown-menu";
 
 const API = axios.create({
-  baseURL: "https://chef-backend-1.onrender.com",
+  baseURL: "https://chef-backend-qh12.onrender.com",
 });
 
 API.interceptors.request.use((config) => {

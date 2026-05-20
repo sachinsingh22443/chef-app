@@ -10,7 +10,7 @@ import { Switch } from "../components/ui/switch";
 import { useState, useEffect } from "react";
 import axios from "axios";
 
-const BASE_URL = "https://chef-backend-1.onrender.com";
+const BASE_URL = "https://chef-backend-qh12.onrender.com";
 
 export default function Profile() {
   const navigate = useNavigate();

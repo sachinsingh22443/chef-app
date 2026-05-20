@@ -18,7 +18,7 @@ export default function ApplicationStatus() {
         const token = localStorage.getItem("token");
 
         const res = await axios.get(
-          "https://chef-backend-1.onrender.com/auth/status",
+          "https://chef-backend-qh12.onrender.com/auth/status",
           {
             headers: {
               Authorization: `Bearer ${token}`,

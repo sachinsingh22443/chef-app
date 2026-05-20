@@ -44,7 +44,7 @@ export default function ChangePassword() {
       const token = localStorage.getItem("token");
 
       await axios.put(
-        "https://chef-backend-1.onrender.com/auth/change-password",
+        "https://chef-backend-qh12.onrender.com/auth/change-password",
         {
           current_password: formData.currentPassword,
           new_password: formData.newPassword,

@@ -18,7 +18,7 @@ export default function Notifications() {
     try {
       const token = localStorage.getItem("token");
 
-      const res = await axios.get("https://chef-backend-1.onrender.com/notifications/", {
+      const res = await axios.get("https://chef-backend-qh12.onrender.com/notifications/", {
         headers: {
           Authorization: `Bearer ${token}`,
         },
@@ -35,7 +35,7 @@ export default function Notifications() {
   // ✅ MARK SINGLE AS READ
   const markAsRead = async (id: string) => {
     try {
-      await axios.put(`https://chef-backend-1.onrender.com/notifications/${id}/read`);
+      await axios.put(`https://chef-backend-qh12.onrender.com/notifications/${id}/read`);
       fetchNotifications();
     } catch (err) {
       console.log(err);
@@ -45,7 +45,7 @@ export default function Notifications() {
   // ✅ MARK ALL AS READ
   const markAllAsRead = async () => {
     try {
-      await axios.put("https://chef-backend-1.onrender.com/notifications/mark-all-read");
+      await axios.put("https://chef-backend-qh12.onrender.com/notifications/mark-all-read");
       fetchNotifications();
     } catch (err) {
       console.log(err);

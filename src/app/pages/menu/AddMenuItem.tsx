@@ -9,7 +9,7 @@ import { Textarea } from "../../components/ui/textarea";
 import { toast } from "sonner";
 
 const API = axios.create({
-  baseURL: "https://chef-backend-1.onrender.com",
+  baseURL: "https://chef-backend-qh12.onrender.com",
 });
 
 // 🔥 TOKEN ATTACH

@@ -33,7 +33,7 @@ export default function TomorrowSpecial() {
   const fetchSpecials = async () => {
     try {
       const res = await axios.get(
-        "https://chef-backend-1.onrender.com/tomorrow-special/all"
+        "https://chef-backend-qh12.onrender.com/tomorrow-special/all"
       );
 
       setSpecials(res.data);
@@ -53,7 +53,7 @@ export default function TomorrowSpecial() {
   const fetchRating = async (chefId: string) => {
     try {
       const res = await axios.get(
-        `https://chef-backend-1.onrender.com/reviews/chef/${chefId}`
+        `https://chef-backend-qh12.onrender.com/reviews/chef/${chefId}`
       );
 
       setRatings((prev: any) => ({
@@ -95,7 +95,7 @@ export default function TomorrowSpecial() {
       }
 
       await axios.post(
-        "https://chef-backend-1.onrender.com/tomorrow-special/",
+        "https://chef-backend-qh12.onrender.com/tomorrow-special/",
         form,
         {
           headers: {
@@ -131,7 +131,7 @@ export default function TomorrowSpecial() {
   const handlePreOrder = async (id: string) => {
     try {
       await axios.post(
-        "https://chef-backend-1.onrender.com/tomorrow-special/pre-order",
+        "https://chef-backend-qh12.onrender.com/tomorrow-special/pre-order",
         {
           special_id: id,
           quantity: 1,

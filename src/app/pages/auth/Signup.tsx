@@ -72,7 +72,7 @@ export default function Signup() {
         }
 
         const res = await axios.post(
-          "https://chef-backend-1.onrender.com/auth/signup",
+          "https://chef-backend-qh12.onrender.com/auth/signup",
           form,
           {
             headers: {
@@ -87,7 +87,7 @@ export default function Signup() {
 
       } catch (error: any) {
         console.error(error.response?.data || error.message);
-        alert("Signup failed ❌");
+        alert("Signup failed ");
       }
     }
   };
