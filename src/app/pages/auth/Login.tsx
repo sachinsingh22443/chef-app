@@ -38,19 +38,39 @@ export default function Login() {
       );
 
       // ✅ token save
-      localStorage.setItem("token", res.data.access_token);
+      if (res.data.application_status === "pending") {
+  alert("Your application is under review. Please wait for admin approval.");
 
-      // ✅ redirect to dashboard
-      if (res.data.application_status !== "approved") {
-      navigate("/auth/status");
-     } else {
-     navigate("/app");
-     }
+  navigate("/auth/status");
+}
+else if (res.data.application_status === "rejected") {
+  alert(" Your application has been rejected. Please contact support.");
+
+  navigate("/auth/status");
+}
+else {
+  // Approved user only
+  localStorage.setItem("token", res.data.access_token);
+  navigate("/app");
+}
 
     } catch (error: any) {
-      console.error(error.response?.data || error.message);
-      alert("Invalid email or password ❌");
-    } finally {
+  const message = error.response?.data?.detail;
+
+  if (message?.toLowerCase().includes("under review")) {
+    alert("⏳ Your account is under review. Please wait for admin approval.");
+    navigate("/auth/status");
+    return;
+  }
+
+  if (message?.toLowerCase().includes("rejected")) {
+    alert("❌ Your account has been rejected.");
+    navigate("/auth/status");
+    return;
+  }
+
+  alert("Invalid email or password ❌");
+} finally {
       setLoading(false);
     }
   };

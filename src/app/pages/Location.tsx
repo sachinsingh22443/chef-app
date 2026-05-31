@@ -27,6 +27,7 @@ export default function Location({ onLocationSelect, onClose }: Props) {
     const data = await res.json();
 
     const address = data.address;
+    console.log("Address Data:", address);
 
 const city =
   address?.village ||
@@ -58,6 +59,18 @@ const fullLocation = `${city}, ${address?.state || ""}`;
         const lat = position.coords.latitude;
         const lng = position.coords.longitude;
 
+        console.log("Latitude:", lat);
+        console.log("Longitude:", lng);
+        console.log("Accuracy:", position.coords.accuracy);
+
+        if (position.coords.accuracy > 100) {
+                     setError(
+                     "Location is not accurate. Please enable GPS and try again or search manually."
+                     );
+                     setLoading(false);
+                     return;
+          }
+
         const city = await getCityName(lat, lng);
 
         // 💾 Save
@@ -73,7 +86,11 @@ const fullLocation = `${city}, ${address?.state || ""}`;
         setError("Location permission denied");
         setLoading(false);
       },
-      { enableHighAccuracy: true }
+      {
+  enableHighAccuracy: true,
+  timeout: 15000,
+  maximumAge: 0,
+}
     );
   };
 
@@ -86,7 +103,7 @@ const fullLocation = `${city}, ${address?.state || ""}`;
 
     try {
       const res = await fetch(
-        `https://nominatim.openstreetmap.org/search?format=json&q=${manualLocation}`
+        `https://nominatim.openstreetmap.org/search?format=json&limit=5&q=${encodeURIComponent(manualLocation)}`
       );
       const data = await res.json();
 

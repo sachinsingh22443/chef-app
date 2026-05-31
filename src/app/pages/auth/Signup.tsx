@@ -11,6 +11,8 @@ export default function Signup() {
   const navigate = useNavigate();
   const [step, setStep] = useState(1);
   const [showPassword, setShowPassword] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [preview, setPreview] = useState("");
 
   const [formData, setFormData] = useState({
     name: "",
@@ -42,7 +44,9 @@ export default function Signup() {
     } 
     else {
       try {
-        const form = new FormData();
+       setLoading(true);
+
+          const form = new FormData();
 
         form.append("name", formData.name);
         form.append("phone", formData.phone);
@@ -86,9 +90,12 @@ export default function Signup() {
         navigate("/auth/status");
 
       } catch (error: any) {
-        console.error(error.response?.data || error.message);
-        alert("Signup failed ");
-      }
+  console.error(error.response?.data || error.message);
+  alert("Signup failed");
+}
+finally {
+  setLoading(false);
+}
     }
   };
 
@@ -119,25 +126,55 @@ export default function Signup() {
           {step === 1 && (
             <>
               <div>
-                <Label className="text-gray-700">Profile Photo</Label>
-                <label className="mt-1 flex items-center justify-center w-full h-32 border-2 border-dashed border-gray-300 rounded-xl cursor-pointer hover:border-orange-400">
-                  <div className="text-center">
-                    <Upload className="w-8 h-8 mx-auto text-gray-400 mb-2" />
-                    <span className="text-sm text-gray-500">Upload Photo</span>
-                  </div>
-                  <input
-                    type="file"
-                    accept="image/*"
-                    className="hidden"
-                    onChange={(e) =>
-                      setFormData({
-                        ...formData,
-                        profilePhoto: e.target.files?.[0] || null,
-                      })
-                    }
-                  />
-                </label>
-              </div>
+  <Label className="text-gray-700">Profile Photo</Label>
+
+  <label className="mt-1 flex flex-col items-center justify-center w-full border-2 border-dashed border-gray-300 rounded-xl cursor-pointer hover:border-orange-400 p-4">
+    
+    {preview ? (
+      <img
+        src={preview}
+        alt="Profile Preview"
+        className="w-24 h-24 rounded-full object-cover border mb-3"
+      />
+    ) : (
+      <Upload className="w-8 h-8 text-gray-400 mb-2" />
+    )}
+
+    {formData.profilePhoto ? (
+      <>
+        <span className="text-green-600 font-medium text-center">
+          {formData.profilePhoto.name}
+        </span>
+
+        <span className="text-xs text-gray-500 mt-1">
+          Image uploaded successfully
+        </span>
+      </>
+    ) : (
+      <span className="text-sm text-gray-500">
+        Click to Upload Photo
+      </span>
+    )}
+
+    <input
+      type="file"
+      accept="image/*"
+      className="hidden"
+      onChange={(e) => {
+        const file = e.target.files?.[0];
+
+        if (file) {
+          setFormData({
+            ...formData,
+            profilePhoto: file,
+          });
+
+          setPreview(URL.createObjectURL(file));
+        }
+      }}
+    />
+  </label>
+</div>
 
               <div>
                 <Label>Full Name</Label>
@@ -224,9 +261,17 @@ export default function Signup() {
             <Button type="button" onClick={handleBack} variant="outline" className="flex-1">
               Back
             </Button>
-            <Button type="submit" className="flex-1 bg-orange-500 text-white">
-              {step === 3 ? "Submit" : "Next"}
-            </Button>
+            <Button
+  type="submit"
+  disabled={loading}
+  className="flex-1 bg-orange-500 text-white"
+>
+  {loading
+    ? "Creating Account..."
+    : step === 3
+    ? "Submit"
+    : "Next"}
+</Button>
           </div>
         </form>
 
