@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { Geolocation } from "@capacitor/geolocation";
 
 type Props = {
   onLocationSelect: (lat: number, lng: number, city: string) => void;
