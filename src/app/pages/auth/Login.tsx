@@ -18,9 +18,24 @@ export default function Login() {
 
   useEffect(() => {
   const token = localStorage.getItem("token");
-  if (token) {
-    navigate("/app");
-  }
+
+  if (!token) return;
+
+  fetch("https://chef-backend-qh12.onrender.com/users/me", {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  })
+    .then((res) => {
+      if (res.ok) {
+        navigate("/app");
+      } else {
+        localStorage.removeItem("token");
+      }
+    })
+    .catch(() => {
+      localStorage.removeItem("token");
+    });
 }, []);
 
   const handleLogin = async (e: React.FormEvent) => {
