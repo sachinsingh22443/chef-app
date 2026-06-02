@@ -51,49 +51,53 @@ const fullLocation = `${city}, ${address?.state || ""}`;
 };
 
   // 📍 AUTO LOCATION
-  const handleAutoLocation = () => {
+  const handleAutoLocation = async () => {
+  try {
     setLoading(true);
     setError("");
 
-    navigator.geolocation.getCurrentPosition(
-      async (position) => {
-        const lat = position.coords.latitude;
-        const lng = position.coords.longitude;
+    const permission = await Geolocation.requestPermissions();
 
-        console.log("Latitude:", lat);
-        console.log("Longitude:", lng);
-        console.log("Accuracy:", position.coords.accuracy);
+    console.log("Permission:", permission);
 
-        if (position.coords.accuracy > 100) {
-                     setError(
-                     "Location is not accurate. Please enable GPS and try again or search manually."
-                     );
-                     setLoading(false);
-                     return;
-          }
+    if (
+      permission.location !== "granted" &&
+      permission.coarseLocation !== "granted"
+    ) {
+      setError("Location permission denied");
+      setLoading(false);
+      return;
+    }
 
-        const city = await getCityName(lat, lng);
+    const position = await Geolocation.getCurrentPosition({
+      enableHighAccuracy: true,
+      timeout: 15000,
+    });
 
-        // 💾 Save
-        localStorage.setItem("lat", lat.toString());
-        localStorage.setItem("lng", lng.toString());
-        localStorage.setItem("location_name", city);
+    const lat = position.coords.latitude;
+    const lng = position.coords.longitude;
 
-        onLocationSelect(lat, lng, city);
-        setLoading(false);
-        onClose();
-      },
-      () => {
-        setError("Location permission denied");
-        setLoading(false);
-      },
-      {
-  enableHighAccuracy: true,
-  timeout: 15000,
-  maximumAge: 0,
-}
-    );
-  };
+    console.log("Latitude:", lat);
+    console.log("Longitude:", lng);
+    console.log("Accuracy:", position.coords.accuracy);
+
+    const city = await getCityName(lat, lng);
+
+    localStorage.setItem("lat", lat.toString());
+    localStorage.setItem("lng", lng.toString());
+    localStorage.setItem("location_name", city);
+
+    onLocationSelect(lat, lng, city);
+
+    setLoading(false);
+    onClose();
+  } catch (err: any) {
+    console.error("Location Error:", err);
+
+    setError(err?.message || "Unable to fetch location");
+    setLoading(false);
+  }
+};
 
   // 🔍 MANUAL LOCATION (Search)
   const handleManualLocation = async () => {

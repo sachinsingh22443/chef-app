@@ -278,7 +278,7 @@ export default function Dashboard() {
 
     const data = await res.json();
 
-    console.log("🔥 Location saved:", data);
+    console.log(" Location saved:", data);
 
     localStorage.setItem("lat", lat.toString());
     localStorage.setItem("lng", lng.toString());
