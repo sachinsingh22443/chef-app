@@ -269,8 +269,22 @@ else if (o.status === "delivered") {
                 className="bg-white rounded-3xl p-5 shadow-lg cursor-pointer"
               >
                 <p className="font-bold">{order.customer}</p>
-                <p>{order.items}</p>
-                <p className="text-sm text-gray-500">{order.address}</p>
+
+<p>{order.items}</p>
+
+<p className="text-sm text-gray-500">{order.address}</p>
+
+<p className="text-sm font-medium text-green-600 mt-1">
+  📞 {order.phone}
+</p>
+
+<a
+  href={`tel:${order.phone}`}
+  onClick={(e) => e.stopPropagation()}
+  className="inline-block mt-2 px-3 py-2 bg-green-500 text-white rounded-lg text-sm"
+>
+  📞 Call Customer
+</a>
                 <div className="mt-3">
   <span className="px-4 py-2 bg-blue-100 text-blue-700 rounded-full text-sm font-semibold">
     {getStatusLabel(order.status)}
