@@ -23,11 +23,18 @@ export default function OrderDetail() {
 
   const currentStatusIndex = statusFlow.findIndex((s) => s.key === status);
 
-  // 🔥 FETCH ORDER
   useEffect(() => {
-    fetchOrder();
-  }, []);
+  fetchOrder();
 
+  const interval = setInterval(() => {
+    fetchOrder();
+  }, 5000);
+
+  return () => clearInterval(interval);
+}, []);
+
+  // 🔥 FETCH ORDER
+  
   const fetchOrder = async () => {
   try {
     const token = localStorage.getItem("token"); // 🔥

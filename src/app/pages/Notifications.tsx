@@ -34,23 +34,45 @@ export default function Notifications() {
 
   // ✅ MARK SINGLE AS READ
   const markAsRead = async (id: string) => {
-    try {
-      await axios.put(`https://chef-backend-qh12.onrender.com/notifications/${id}/read`);
-      fetchNotifications();
-    } catch (err) {
-      console.log(err);
-    }
-  };
+  try {
+    const token = localStorage.getItem("token");
+
+    await axios.put(
+      `https://chef-backend-qh12.onrender.com/notifications/${id}/read`,
+      {},
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      }
+    );
+
+    fetchNotifications();
+  } catch (err) {
+    console.log(err);
+  }
+};
 
   // ✅ MARK ALL AS READ
   const markAllAsRead = async () => {
-    try {
-      await axios.put("https://chef-backend-qh12.onrender.com/notifications/mark-all-read");
-      fetchNotifications();
-    } catch (err) {
-      console.log(err);
-    }
-  };
+  try {
+    const token = localStorage.getItem("token");
+
+    await axios.put(
+      "https://chef-backend-qh12.onrender.com/notifications/mark-all-read",
+      {},
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      }
+    );
+
+    fetchNotifications();
+  } catch (err) {
+    console.log(err);
+  }
+};
 
   // ✅ ICON SELECTOR
   const getNotificationIcon = (type: string) => {
@@ -74,7 +96,7 @@ export default function Notifications() {
     return d.toLocaleString();
   };
 
-  const unreadCount = notifications.filter((n) => !n.is_read).length;
+  const unreadCount = notifications.filter((n) => n.unread).length;
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -127,10 +149,10 @@ export default function Notifications() {
             <div
               key={notification.id}
               onClick={() =>
-                !notification.is_read && markAsRead(notification.id)
-              }
+              notification.unread && markAsRead(notification.id)
+                }
               className={`bg-white rounded-3xl p-5 shadow-lg cursor-pointer ${
-                notification.is_read
+                !notification.unread
                   ? "border border-gray-100"
                   : "border-2 border-orange-200 bg-orange-50/30"
               }`}
@@ -140,7 +162,7 @@ export default function Notifications() {
                 {/* ICON */}
                 <div
                   className={`w-12 h-12 rounded-2xl flex items-center justify-center text-2xl ${
-                    notification.is_read ? "bg-gray-100" : "bg-orange-100"
+                    !notification.unread ? "bg-gray-100" : "bg-orange-100"
                   }`}
                 >
                   {getNotificationIcon(notification.type)}
@@ -153,7 +175,7 @@ export default function Notifications() {
                       {notification.title}
                     </h3>
 
-                    {!notification.is_read && (
+                    {notification.unread && (
                       <div className="w-2 h-2 bg-orange-500 rounded-full mt-2"></div>
                     )}
                   </div>
@@ -164,11 +186,11 @@ export default function Notifications() {
 
                   <div className="flex justify-between items-center">
                     <p className="text-xs text-gray-400">
-                      {formatTime(notification.created_at)}
+                      {notification.time}
                     </p>
 
-                    {notification.is_read && (
-                      <Check className="w-4 h-4 text-green-500" />
+                    {!notification.unread && (
+                   <Check className="w-4 h-4 text-green-500" />
                     )}
                   </div>
                 </div>

@@ -39,6 +39,7 @@ export default function Orders() {
       const completedArr: any[] = [];
 
       orders.forEach((o: any) => {
+        console.log("ORDER STATUS:", o.id, o.status);
         const items = o.items?.length
           ? o.items.map((i: any) => `${i.name} x${i.quantity}`).join(", ")
           : "";
@@ -57,10 +58,19 @@ export default function Orders() {
           phone: o.phone || "N/A",
         };
 
-        if (o.status === "pending") newArr.push(formatted);
-        else if (["accepted", "preparing", "ready", "out_for_delivery"].includes(o.status))
-          activeArr.push(formatted);
-        else if (o.status === "delivered") completedArr.push(formatted);
+        if (o.status === "pending") {
+  newArr.push(formatted);
+}
+
+else if (
+  ["accepted", "preparing", "ready", "out_for_delivery"].includes(o.status)
+) {
+  activeArr.push(formatted);
+}
+
+else if (o.status === "delivered") {
+  completedArr.push(formatted);
+}
       });
 
       setNewOrders(newArr);
@@ -72,6 +82,25 @@ export default function Orders() {
     }
   };
 
+
+  const getStatusLabel = (status: string) => {
+  switch (status) {
+    case "pending":
+      return "New Order";
+    case "accepted":
+      return "Order Accepted";
+    case "preparing":
+      return "Preparing";
+    case "ready":
+      return "Ready";
+    case "out_for_delivery":
+      return "Out For Delivery";
+    case "delivered":
+      return "Delivered";
+    default:
+      return status;
+  }
+};
   // =========================
   // 🔥 SEARCH FILTER (SAFE)
   // =========================
@@ -157,10 +186,33 @@ export default function Orders() {
         <Tabs defaultValue="new" className="w-full">
 
           <TabsList className="w-full bg-white rounded-2xl p-1 mb-6">
-            <TabsTrigger value="new" className="flex-1 rounded-xl">New</TabsTrigger>
-            <TabsTrigger value="active" className="flex-1 rounded-xl">Active</TabsTrigger>
-            <TabsTrigger value="completed" className="flex-1 rounded-xl">Completed</TabsTrigger>
-            <TabsTrigger value="subscription" className="flex-1 rounded-xl">Subscription</TabsTrigger>
+            <TabsTrigger
+  value="new"
+  className="flex-1 rounded-xl data-[state=active]:bg-orange-500 data-[state=active]:text-white"
+>
+  New
+</TabsTrigger>
+
+<TabsTrigger
+  value="active"
+  className="flex-1 rounded-xl data-[state=active]:bg-orange-500 data-[state=active]:text-white"
+>
+  Active
+</TabsTrigger>
+
+<TabsTrigger
+  value="completed"
+  className="flex-1 rounded-xl data-[state=active]:bg-orange-500 data-[state=active]:text-white"
+>
+  Completed
+</TabsTrigger>
+
+<TabsTrigger
+  value="subscription"
+  className="flex-1 rounded-xl data-[state=active]:bg-orange-500 data-[state=active]:text-white"
+>
+  Subscription
+</TabsTrigger>
           </TabsList>
 
           {/* NEW */}
@@ -174,6 +226,9 @@ export default function Orders() {
                 <p className="font-bold">{order.customer}</p>
                 <p>{order.items}</p>
                 <p className="text-sm text-gray-500">{order.address}</p>
+                <div className="mt-2 inline-block px-3 py-1 bg-yellow-100 text-yellow-700 rounded-full text-xs font-medium">
+               {getStatusLabel(order.status)}
+               </div>
 
                 <div className="flex justify-between mt-2">
                   <span>{order.time}</span>
@@ -216,21 +271,81 @@ export default function Orders() {
                 <p className="font-bold">{order.customer}</p>
                 <p>{order.items}</p>
                 <p className="text-sm text-gray-500">{order.address}</p>
+                <div className="mt-3">
+  <span className="px-4 py-2 bg-blue-100 text-blue-700 rounded-full text-sm font-semibold">
+    {getStatusLabel(order.status)}
+  </span>
+</div>
+
+
+{/* STATUS PROGRESS */}
+<div className="mt-4 text-xs text-gray-600 font-medium">
+  {order.status === "accepted" &&
+    "✓ Accepted → ○ Preparing → ○ Ready → ○ Out For Delivery → ○ Delivered"}
+
+  {order.status === "preparing" &&
+    "✓ Accepted → ✓ Preparing → ○ Ready → ○ Out For Delivery → ○ Delivered"}
+
+  {order.status === "ready" &&
+    "✓ Accepted → ✓ Preparing → ✓ Ready → ○ Out For Delivery → ○ Delivered"}
+
+  {order.status === "out_for_delivery" &&
+    "✓ Accepted → ✓ Preparing → ✓ Ready → ✓ Out For Delivery → ○ Delivered"}
+</div>
+
 
                 <div className="flex justify-between">
                   <span>{order.time}</span>
                   <span>₹{order.amount}</span>
                 </div>
 
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    updateStatus(order.id, "delivered");
-                  }}
-                  className="w-full mt-3 py-3 bg-orange-500 text-white rounded-xl"
-                >
-                  Mark Delivered
-                </button>
+                {order.status === "accepted" && (
+  <button
+    onClick={(e) => {
+      e.stopPropagation();
+      updateStatus(order.id, "preparing");
+    }}
+    className="w-full mt-3 py-3 bg-blue-500 text-white rounded-xl"
+  >
+    Start Preparing
+  </button>
+)}
+
+{order.status === "preparing" && (
+  <button
+    onClick={(e) => {
+      e.stopPropagation();
+      updateStatus(order.id, "ready");
+    }}
+    className="w-full mt-3 py-3 bg-green-500 text-white rounded-xl"
+  >
+    Mark Ready
+  </button>
+)}
+
+{order.status === "ready" && (
+  <button
+    onClick={(e) => {
+      e.stopPropagation();
+      updateStatus(order.id, "out_for_delivery");
+    }}
+    className="w-full mt-3 py-3 bg-purple-500 text-white rounded-xl"
+  >
+    Assign Delivery Partner
+  </button>
+)}
+
+{order.status === "out_for_delivery" && (
+  <button
+    onClick={(e) => {
+      e.stopPropagation();
+      updateStatus(order.id, "delivered");
+    }}
+    className="w-full mt-3 py-3 bg-orange-500 text-white rounded-xl"
+  >
+    Mark Delivered
+  </button>
+)}
               </div>
             ))}
           </TabsContent>
@@ -246,6 +361,9 @@ export default function Orders() {
                 <p className="font-bold">{order.customer}</p>
                 <p>{order.items}</p>
                 <p className="text-sm text-gray-500">{order.address}</p>
+                <div className="mt-2 inline-block px-3 py-1 bg-green-100 text-green-700 rounded-full text-xs font-medium">
+              {getStatusLabel(order.status)}
+              </div>
                 <span className="font-bold">₹{order.amount}</span>
               </div>
             ))}

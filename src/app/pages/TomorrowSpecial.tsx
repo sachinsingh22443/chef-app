@@ -69,61 +69,92 @@ export default function TomorrowSpecial() {
   // =========================
   // 🔥 CREATE
   // =========================
-  const handleCreate = async (e: any) => {
-    e.preventDefault();
+  const [creating, setCreating] = useState(false);
 
-    const token = localStorage.getItem("token");
+const handleCreate = async (e: any) => {
+  e.preventDefault();
 
-    // 🔥 VALIDATION
-    if (!formData.foodType) {
-      toast.error("Please select food type");
-      return;
+  if (creating) return;
+
+  const token = localStorage.getItem("token");
+
+  // Validation
+  if (!formData.foodType) {
+    toast.error("Please select food type");
+    return;
+  }
+
+  if (!formData.dishName.trim()) {
+    toast.error("Please enter dish name");
+    return;
+  }
+
+  if (!formData.price) {
+    toast.error("Please enter price");
+    return;
+  }
+
+  setCreating(true);
+
+  try {
+    toast.loading("Creating special...", {
+      id: "create-special",
+    });
+
+    const form = new FormData();
+
+    form.append("dish_name", formData.dishName);
+    form.append("description", formData.description);
+    form.append("price", formData.price);
+    form.append("max_plates", formData.maxPlates);
+    form.append("cutoff_time", formData.cutoffTime);
+    form.append("food_type", formData.foodType);
+
+    if (formData.image) {
+      form.append("image", formData.image);
     }
 
-    try {
-      const form = new FormData();
-
-      form.append("dish_name", formData.dishName);
-      form.append("description", formData.description);
-      form.append("price", formData.price);
-      form.append("max_plates", formData.maxPlates);
-      form.append("cutoff_time", formData.cutoffTime);
-      form.append("food_type", formData.foodType); // ✅ FIX
-
-      if (formData.image) {
-        form.append("image", formData.image);
+    await axios.post(
+      "https://chef-backend-qh12.onrender.com/tomorrow-special/",
+      form,
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "multipart/form-data",
+        },
       }
+    );
 
-      await axios.post(
-        "https://chef-backend-qh12.onrender.com/tomorrow-special/",
-        form,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-            "Content-Type": "multipart/form-data",
-          },
-        }
-      );
+    toast.success("Tomorrow Special created successfully ", {
+      id: "create-special",
+    });
 
-      toast.success("Created successfully");
+    // Reset form
+    setFormData({
+      dishName: "",
+      description: "",
+      price: "",
+      maxPlates: "",
+      cutoffTime: "",
+      foodType: "",
+      image: null,
+    });
 
-      // 🔥 RESET FORM
-      setFormData({
-        dishName: "",
-        description: "",
-        price: "",
-        maxPlates: "",
-        cutoffTime: "",
-        foodType: "",
-        image: null,
-      });
+    fetchSpecials();
 
-      fetchSpecials();
+  } catch (err: any) {
+    console.error("CREATE ERROR:", err);
 
-    } catch (err: any) {
-      toast.error(err.response?.data?.detail || "Error creating special");
-    }
-  };
+    toast.error(
+      err.response?.data?.detail || "Failed to create special",
+      {
+        id: "create-special",
+      }
+    );
+  } finally {
+    setCreating(false);
+  }
+};
 
   // =========================
   // 🔥 PRE-ORDER
@@ -285,7 +316,13 @@ export default function TomorrowSpecial() {
           }
         />
 
-        <Button type="submit">Create</Button>
+        <Button
+  type="submit"
+  disabled={creating}
+  className="w-full"
+>
+  {creating ? "Creating..." : "Create"}
+</Button>
       </form>
     </div>
   );

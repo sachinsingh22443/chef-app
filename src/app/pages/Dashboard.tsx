@@ -220,12 +220,17 @@ export default function Dashboard() {
 
       {/* ACTIVE ORDERS */}
       <div>
-        <h3 className="font-bold mb-4">Active Orders</h3>
+        <h3 className="font-bold mb-4">
+  Active Orders ({activeOrders.length})
+</h3>
 
         {activeOrders.length === 0 ? (
-          <p>No active orders</p>
+          <div className="bg-white p-6 rounded-xl text-center text-gray-500">
+  🎉 No active orders right now
+</div>
         ) : (
-          activeOrders.map((order) => (
+          activeOrders.slice(0, 3).map((order) => (
+            
             <div
               key={order.id}
               onClick={() => navigate(`/orders/${order.id}`)}
@@ -236,8 +241,18 @@ export default function Dashboard() {
               <p>₹{order.amount}</p>
             </div>
           ))
+        
+
         )}
+       
       </div>
+    <button
+  onClick={() => navigate("/orders")}
+  className="w-full mt-3 py-3 bg-orange-100 text-orange-600 rounded-xl"
+>
+  View All Orders
+</button>
+
 
     </div>
 
