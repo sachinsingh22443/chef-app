@@ -21,6 +21,18 @@ export default function Login() {
 
   if (!token) return;
 
+  try {
+    const payload = JSON.parse(atob(token.split(".")[1]));
+
+    if (payload.exp * 1000 < Date.now()) {
+      localStorage.removeItem("token");
+      return;
+    }
+  } catch {
+    localStorage.removeItem("token");
+    return;
+  }
+
   fetch("https://chef-backend-qh12.onrender.com/users/me", {
     headers: {
       Authorization: `Bearer ${token}`,
@@ -36,7 +48,7 @@ export default function Login() {
     .catch(() => {
       localStorage.removeItem("token");
     });
-}, []);
+}, [navigate]);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();

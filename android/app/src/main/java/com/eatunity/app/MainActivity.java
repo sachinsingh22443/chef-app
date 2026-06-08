@@ -1,4 +1,4 @@
-package com.eatunity.app;
+package com.chefapp.app;
 
 import com.getcapacitor.BridgeActivity;
 

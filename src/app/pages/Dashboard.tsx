@@ -79,9 +79,14 @@ export default function Dashboard() {
 
       setActiveOrders(active);
 
-    } catch (err) {
-      console.log("Dashboard Error:", err);
-    }
+    } catch (err: any) {
+  console.log("Dashboard Error:", err);
+
+  if (err.response?.status === 401) {
+    localStorage.removeItem("token");
+    navigate("/auth/login"); // ya tumhara login route
+  }
+}
   };
 
   // =========================
@@ -286,6 +291,12 @@ export default function Dashboard() {
         }),
       }
     );
+
+    if (res.status === 401) {
+    localStorage.removeItem("token");
+    navigate("/auth/login");
+    return;
+ }
 
     if (!res.ok) {
       throw new Error("Failed to save location");
