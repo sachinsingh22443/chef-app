@@ -31,6 +31,15 @@ export default function Dashboard() {
   const [locationName, setLocationName] = useState("Set Kitchen Location");
 
   useEffect(() => {
+  if (showLocation) {
+    window.scrollTo({
+      top: document.body.scrollHeight,
+      behavior: "smooth",
+    });
+  }
+}, [showLocation]);
+
+  useEffect(() => {
     fetchDashboard();
   }, []);
 
@@ -221,6 +230,36 @@ export default function Dashboard() {
             Tomorrow Special
           </button>
         </div>
+
+       <div className="grid grid-cols-2 gap-4 mt-4">
+
+  <button
+    onClick={() => navigate("/app/subscription-plans")}
+    className="bg-gradient-to-br from-purple-500 to-pink-500 rounded-3xl p-6 text-white shadow-lg"
+  >
+    <div className="text-3xl mb-2">🥗</div>
+    <p className="font-bold">
+      Subscription Plans
+    </p>
+    <p className="text-xs text-white/80 mt-1">
+      Manage Diet Plans
+    </p>
+  </button>
+
+  <button
+    onClick={() => navigate("/app/subscribers")}
+    className="bg-gradient-to-br from-green-500 to-emerald-600 rounded-3xl p-6 text-white shadow-lg"
+  >
+    <div className="text-3xl mb-2">👥</div>
+    <p className="font-bold">
+      Subscribers
+    </p>
+    <p className="text-xs text-white/80 mt-1">
+      Active Customers
+    </p>
+  </button>
+
+</div>
       </div>
 
       {/* ACTIVE ORDERS */}

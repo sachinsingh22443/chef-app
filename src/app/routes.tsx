@@ -27,6 +27,11 @@ import Terms from "./pages/terms_andconditions/terms";
 import Privacy from "./pages/terms_andconditions/privacy";
 import Support from "./pages/terms_andconditions/support";
 
+import CreateSubscriptionPlan from "./pages/CreateSubscriptionPlan";
+import EditSubscriptionPlan from "./pages/EditSubscriptionPlan";
+import SubscriptionPlans from "./pages/SubscriptionPlans";
+import Subscribers from "./pages/Subscribers";
+
 import NotFound from "./pages/NotFound";
 
 export const router = createBrowserRouter([
@@ -81,6 +86,11 @@ export const router = createBrowserRouter([
       { path: "terms", element: <Terms /> },
       { path: "privacy", element: <Privacy /> },
       { path: "support", element: <Support /> },
+
+      { path: "subscription-plans", element: <SubscriptionPlans /> },
+      { path: "subscription-plans/create", element: <CreateSubscriptionPlan /> },
+      { path: "subscription-plans/edit/:id", element: <EditSubscriptionPlan /> },
+      { path: "subscribers", element: <Subscribers /> },
     ],
   },
 
@@ -103,6 +113,39 @@ export const router = createBrowserRouter([
   { path: "/terms", element: <MainLayout />, children: [{ index: true, element: <Terms /> }] },
   { path: "/privacy", element: <MainLayout />, children: [{ index: true, element: <Privacy /> }] },
   { path: "/support", element: <MainLayout />, children: [{ index: true, element: <Support /> }] },
+
+
+  { 
+  path: "/subscription-plans",
+  element: <MainLayout />,
+  children: [
+    { index: true, element: <SubscriptionPlans /> }
+  ]
+},
+
+{
+  path: "/subscription-plans/create",
+  element: <MainLayout />,
+  children: [
+    { index: true, element: <CreateSubscriptionPlan /> }
+  ]
+},
+
+{
+  path: "/subscription-plans/edit/:id",
+  element: <MainLayout />,
+  children: [
+    { index: true, element: <EditSubscriptionPlan /> }
+  ]
+},
+
+{
+  path: "/subscribers",
+  element: <MainLayout />,
+  children: [
+    { index: true, element: <Subscribers /> }
+  ]
+},
 
   { path: "*", element: <NotFound /> },
 ]);
