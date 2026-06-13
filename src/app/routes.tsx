@@ -147,5 +147,16 @@ export const router = createBrowserRouter([
   ]
 },
 
+{
+  path: "/orders/:orderId",
+  element: <MainLayout />,
+  children: [
+    {
+      index: true,
+      element: <OrderDetail />
+    }
+  ]
+},
+
   { path: "*", element: <NotFound /> },
 ]);
