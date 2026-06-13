@@ -13,6 +13,7 @@ export default function CreateSubscriptionPlan() {
   price: "",
   tagline: "",
   description: "",
+  plan_type: "normal",
 
   emoji: "🍱",
   color: "#8b5cf6",
@@ -40,6 +41,7 @@ export default function CreateSubscriptionPlan() {
         {
   title: form.title,
   price: Number(form.price),
+  plan_type: form.plan_type,
 
   goal: form.goal,
   diet_type: form.diet_type,
@@ -139,6 +141,35 @@ export default function CreateSubscriptionPlan() {
     }
   />
 
+  <div className="bg-white rounded-3xl p-5 shadow-lg">
+  <h3 className="font-bold mb-4">
+    Subscription Type
+  </h3>
+
+  <select
+    className="w-full p-4 rounded-2xl border"
+    value={form.plan_type}
+    onChange={(e) =>
+      setForm({
+        ...form,
+        plan_type: e.target.value,
+      })
+    }
+  >
+    <option value="normal">
+      🥗 Normal Diet
+    </option>
+
+    <option value="dietician">
+      👨‍⚕️ Dietician Support
+    </option>
+
+    <option value="gym">
+      💪 Gym + Diet + Trainer
+    </option>
+  </select>
+</div>
+
 </div>
 
 <div className="bg-white rounded-3xl p-5 shadow-lg">
@@ -206,18 +237,20 @@ export default function CreateSubscriptionPlan() {
     }
   />
 
-  <input
-    type="number"
-    placeholder="Duration Days"
-    className="p-4 rounded-2xl border bg-white"
-    value={form.duration_days}
-    onChange={(e) =>
-      setForm({
-        ...form,
-        duration_days: e.target.value,
-      })
-    }
-  />
+  <select
+  className="p-4 rounded-2xl border bg-white"
+  value={form.duration_days}
+  onChange={(e) =>
+    setForm({
+      ...form,
+      duration_days: e.target.value,
+    })
+  }
+>
+  <option value="7">7 Days</option>
+  <option value="15">15 Days</option>
+  <option value="30">30 Days</option>
+</select>
 
 </div>
 
@@ -359,8 +392,8 @@ export default function CreateSubscriptionPlan() {
 
     <div className="text-right">
       <p className="text-white/70 text-sm">
-        Monthly
-      </p>
+  {form.duration_days} Days
+</p>
 
       <p className="text-3xl font-bold">
         ₹{form.price || 0}
@@ -376,6 +409,16 @@ export default function CreateSubscriptionPlan() {
     <span className="bg-white/20 px-3 py-1 rounded-full text-sm">
       {form.diet_type}
     </span>
+
+    <span className="bg-white/20 px-3 py-1 rounded-full text-sm">
+  {form.plan_type === "normal" && "🥗 Normal"}
+
+  {form.plan_type === "dietician" &&
+    "👨‍⚕️ Dietician"}
+
+  {form.plan_type === "gym" &&
+    "💪 Gym + Trainer"}
+</span>
   </div>
 
   <div className="mt-5 text-sm text-white/90">
