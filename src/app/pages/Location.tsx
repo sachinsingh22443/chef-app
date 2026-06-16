@@ -244,7 +244,7 @@ const handlePlaceSelect = async (
       </button>
 
       <h2 className="text-xl font-semibold text-center mb-5">
-        Set kitchen location
+        Choose your location
       </h2>
 
       <button
