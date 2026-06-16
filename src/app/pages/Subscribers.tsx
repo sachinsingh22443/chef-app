@@ -25,7 +25,7 @@ export default function Subscribers() {
           },
         }
       );
-
+      console.log("SUBSCRIBERS =", res.data);
       setSubscribers(res.data || []);
     } catch (err) {
       console.log(err);
@@ -139,14 +139,16 @@ export default function Subscribers() {
               <div className="mt-4 space-y-2">
 
                 <div className="flex justify-between">
-                  <span className="text-gray-500">
-                    Dish
-                  </span>
+  <span className="text-gray-500">
+    Plan Type
+  </span>
 
-                  <span>
-                    {sub.dish}
-                  </span>
-                </div>
+  <span>
+    {sub.plan_type === "normal" && "🥗 Normal Diet"}
+    {sub.plan_type === "dietician" && "👨‍⚕️ Dietician Support"}
+    {sub.plan_type === "gym" && "💪 Gym + Trainer"}
+  </span>
+</div>
 
                 <div className="flex justify-between">
                   <span className="text-gray-500">

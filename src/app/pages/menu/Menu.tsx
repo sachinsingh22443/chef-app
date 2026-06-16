@@ -32,15 +32,15 @@ export default function Menu() {
 
   const fetchMenus = async () => {
     try {
-      const res = await API.get("/menu");
+      const res = await API.get("/menu/my");
 
       const mapped = res.data.map((item: any) => ({
-      ...item,
-      prepTime: item.prep_time,
-     inStock: item.quantity > 0,
-     quantity: item.quantity, // 🔥 ADD THIS
-    isVeg: item.food_type === "vegetarian",
-    }));
+  ...item,
+  prepTime: item.prep_time,
+  inStock: item.is_available,
+  quantity: item.quantity,
+  isVeg: item.food_type === "vegetarian",
+}));
 
       setMenuItems(mapped);
     } catch (err: any) {
@@ -48,41 +48,69 @@ export default function Menu() {
     }
   };
 
+
+
+
+
+
   const handleDelete = async (id: string) => {
-    try {
-      await API.delete(`/menu/${id}`);
-      fetchMenus();
-    } catch (err) {
-      console.log(err);
-    }
-  };
+  try {
+    console.log("Deleting:", id);
+
+    const res = await API.delete(`/menu/${id}`);
+
+    console.log("Delete Success:", res.data);
+
+    fetchMenus();
+  } catch (err: any) {
+    console.log("DELETE ERROR:", err);
+    console.log("RESPONSE:", err.response?.data);
+    console.log("STATUS:", err.response?.status);
+
+    alert(
+      err.response?.data?.detail ||
+      err.message ||
+      "Delete Failed"
+    );
+  }
+};
+
+
+
+
 
   // 🔥 FIX: FormData use for PUT
   const handleToggleStock = async (item: any) => {
   try {
     const newStock = !item.inStock;
 
-    // 🔥 UI instantly update
+    // UI update
     setMenuItems(prev =>
       prev.map(i =>
-        i.id === item.id ? { ...i, inStock: newStock } : i
+        i.id === item.id
+          ? { ...i, inStock: newStock }
+          : i
       )
     );
 
-    const form = new FormData();
-    form.append("quantity", newStock ? "10" : "0");
-
-    await API.put(`/menu/${item.id}`, form, {
-      headers: { "Content-Type": "multipart/form-data" },
-    });
+    await API.put(
+      `/menu/${item.id}/availability`,
+      null,
+      {
+        params: {
+          is_available: newStock,
+        },
+      }
+    );
 
   } catch (err) {
     console.log(err);
 
-    // ❌ rollback if error
+    // rollback
     fetchMenus();
   }
 };
+
   const filteredItems = menuItems.filter((item) =>
     item.name.toLowerCase().includes(searchQuery.toLowerCase())
   );

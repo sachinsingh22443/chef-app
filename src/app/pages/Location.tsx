@@ -1,186 +1,298 @@
 import { useState } from "react";
 import { Geolocation } from "@capacitor/geolocation";
+import { Loader } from "@googlemaps/js-api-loader";
+import { useEffect } from "react";
+// import { setOptions, importLibrary } from "@googlemaps/js-api-loader";
+
+declare const google: any;
 
 type Props = {
   onLocationSelect: (lat: number, lng: number, city: string) => void;
   onClose: () => void;
 };
 
-export default function Location({ onLocationSelect, onClose }: Props) {
+export default function Location({
+  onLocationSelect,
+  onClose,
+}: Props) {
   const [loading, setLoading] = useState(false);
   const [manualLocation, setManualLocation] = useState("");
   const [error, setError] = useState("");
 
-  // 📍 Reverse Geocoding (lat/lng → city)
-  const getCityName = async (lat: number, lng: number) => {
-  try {
-    const res = await fetch(
-      `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}`,
-      {
-        headers: {
-          "User-Agent": "my-chef-app",
-        },
-      }
-    );
+  // Reverse Geocoding
+  
 
-    if (!res.ok) throw new Error("API failed");
-
-    const data = await res.json();
-
-    const address = data.address;
-    console.log("Address Data:", address);
-
-const city =
-  address?.village ||
-  address?.town ||
-  address?.city ||
-  address?.county ||
-  address?.state_district ||
-  address?.state ||
-  "Unknown";
-
-const fullLocation = `${city}, ${address?.state || ""}`;
-
-    return fullLocation;
-
-  } catch (err) {
-    console.error("❌ Reverse geocoding error:", err);
-    return "Unknown Location";
-  }
-
-};
-
-  // 📍 AUTO LOCATION
+  // Current Location
   const handleAutoLocation = async () => {
-  try {
-    setLoading(true);
-    setError("");
+    try {
+      setLoading(true);
+      setError("");
 
-    const permission = await Geolocation.requestPermissions();
+      if (window.Capacitor?.isNativePlatform()) {
+           const permission = await Geolocation.requestPermissions();
 
-    console.log("Permission:", permission);
+  if (
+    permission.location !== "granted" &&
+    permission.coarseLocation !== "granted"
+  ) {
+    setError("Location permission denied");
+    setLoading(false);
+    return;
+  }
+}
 
-    if (
-      permission.location !== "granted" &&
-      permission.coarseLocation !== "granted"
-    ) {
-      setError("Location permission denied");
-      setLoading(false);
-      return;
+      
+
+  let lat: number;
+let lng: number;
+
+if (window.Capacitor?.isNativePlatform()) {
+    let bestPosition = null;
+
+for (let i = 0; i < 3; i++) {
+  const pos = await Geolocation.getCurrentPosition({
+    enableHighAccuracy: true,
+    timeout: 30000,
+    maximumAge: 0,
+  });
+
+  if (
+    !bestPosition ||
+    pos.coords.accuracy < bestPosition.coords.accuracy
+  ) {
+    bestPosition = pos;
+  }
+}
+
+lat = bestPosition.coords.latitude;
+lng = bestPosition.coords.longitude;
+
+// console.log(
+//   "Best Accuracy:",
+//   bestPosition.coords.accuracy
+// );
+
+  
+
+} else {
+  const position = await new Promise<GeolocationPosition>(
+    (resolve, reject) => {
+      navigator.geolocation.getCurrentPosition(
+        resolve,
+        reject,
+        {
+          enableHighAccuracy: true,
+          timeout: 60000,
+        }
+      );
     }
+  );
 
-    const position = await Geolocation.getCurrentPosition({
-      enableHighAccuracy: true,
-      timeout: 15000,
-    });
+  lat = position.coords.latitude;
+  lng = position.coords.longitude;
 
-    const lat = position.coords.latitude;
-    const lng = position.coords.longitude;
+}
 
-    console.log("Latitude:", lat);
-    console.log("Longitude:", lng);
-    console.log("Accuracy:", position.coords.accuracy);
 
-    const city = await getCityName(lat, lng);
+      // console.log("✅ GPS Coordinates");
+      // console.log("Latitude:", lat);
+      // console.log("Longitude:", lng);
+
+     await loader?.load();
+
+const geocoder = new google.maps.Geocoder();
+
+geocoder.geocode(
+  {
+    location: { lat, lng },
+  },
+  (results: any, status: any) => {
+    const locationName =
+      status === "OK" && results?.[0]
+        ? results[0].formatted_address
+        : "Current Location";
 
     localStorage.setItem("lat", lat.toString());
     localStorage.setItem("lng", lng.toString());
-    localStorage.setItem("location_name", city);
+    localStorage.setItem("location_name", locationName);
 
-    onLocationSelect(lat, lng, city);
+    onLocationSelect(lat, lng, locationName);
 
     setLoading(false);
     onClose();
-  } catch (err: any) {
-    console.error("Location Error:", err);
+  }
+);
+    } catch (err: any) {
+      // console.error("Location Error:", err);
 
-    setError(err?.message || "Unable to fetch location");
-    setLoading(false);
+      setError(err?.message || "Unable to fetch location");
+      setLoading(false);
+    }
+  };
+
+
+const [suggestions, setSuggestions] = useState<any[]>([]);
+const [loader, setLoader] = useState<Loader | null>(null);
+
+useEffect(() => {
+
+  
+  const mapsLoader = new Loader({
+    apiKey: import.meta.env.VITE_GOOGLE_MAPS_API_KEY,
+    version: "weekly",
+    libraries: ["places"],
+  });
+
+
+
+  setLoader(mapsLoader);
+}, []);
+
+
+const searchPlaces = async (query: string) => {
+  if (!loader || query.length < 3) {
+    setSuggestions([]);
+    return;
+  }
+
+  try {
+    await loader.load();
+
+    // console.log("Google:", !!window.google);
+    // console.log("Places:", !!window.google?.maps?.places);
+
+    const service =
+      new google.maps.places.AutocompleteService();
+
+    service.getPlacePredictions(
+      {
+        input: query,
+        componentRestrictions: { country: "in" },
+      },
+      (predictions: any, status: any) => {
+        // alert(
+        //   `STATUS: ${status}\nCOUNT: ${
+        //     predictions?.length || 0
+        //   }`
+        // );
+
+        // console.log("STATUS:", status);
+        // console.log("PREDICTIONS:", predictions);
+
+        setSuggestions(predictions || []);
+      }
+    );
+  } catch (err) {
+    // alert("ERROR: " + JSON.stringify(err));
+    setError("Location search failed");
   }
 };
 
-  // 🔍 MANUAL LOCATION (Search)
-  const handleManualLocation = async () => {
-    if (!manualLocation) return;
 
-    setLoading(true);
-    setError("");
+const handlePlaceSelect = async (
+  placeId: string,
+  description: string
+) => {
+  if (!loader) return;
 
-    try {
-      const res = await fetch(
-        `https://nominatim.openstreetmap.org/search?format=json&limit=5&q=${encodeURIComponent(manualLocation)}`
-      );
-      const data = await res.json();
+  await loader.load();
 
-      if (data.length > 0) {
-        const lat = parseFloat(data[0].lat);
-        const lng = parseFloat(data[0].lon);
+  const geocoder = new google.maps.Geocoder();
 
-        const city = await getCityName(lat, lng);
+  geocoder.geocode(
+    { placeId },
+    (results, status) => {
+      if (
+        status === "OK" &&
+        results &&
+        results[0]
+      ) {
+        const loc = results[0].geometry.location;
 
-        // 💾 Save
+        const lat = loc.lat();
+        const lng = loc.lng();
+
         localStorage.setItem("lat", lat.toString());
         localStorage.setItem("lng", lng.toString());
-        localStorage.setItem("location_name", city);
+        localStorage.setItem(
+          "location_name",
+          description
+        );
+         
+        setSuggestions([]);
+        setManualLocation(description);
 
-        onLocationSelect(lat, lng, city);
+        onLocationSelect(
+          lat,
+          lng,
+          description
+        );
+
         onClose();
-      } else {
-        setError("Location not found");
       }
-    } catch {
-      setError("Something went wrong");
     }
-
-    setLoading(false);
-  };
+  );
+};
 
   return (
     <div className="bg-white w-full max-w-md p-6 rounded-2xl shadow-xl relative">
-      
-      {/* ❌ Close Button */}
       <button
         onClick={onClose}
-        className="absolute top-3 right-3 text-gray-500"
+        className="absolute top-3 right-3 text-gray-500 hover:text-black"
       >
         ✖
       </button>
 
       <h2 className="text-xl font-semibold text-center mb-5">
-        Choose your location
+        Set kitchen location
       </h2>
 
-      {/* 📍 AUTO BUTTON */}
       <button
         onClick={handleAutoLocation}
-        className="w-full bg-orange-500 text-white py-3 rounded-xl mb-4 font-medium"
+        disabled={loading}
+        className="w-full bg-orange-500 text-white py-3 rounded-xl mb-4 font-medium disabled:opacity-50"
       >
         {loading ? "Detecting location..." : "📍 Use Current Location"}
       </button>
 
-      {/* Divider */}
       <div className="text-center text-gray-400 mb-3">OR</div>
 
-      {/* 🔍 INPUT */}
       <input
         type="text"
-        placeholder="Search your area, city..."
+        placeholder="Search village, area, city..."
         value={manualLocation}
-        onChange={(e) => setManualLocation(e.target.value)}
+        onChange={(e) => {
+     setManualLocation(e.target.value);
+     searchPlaces(e.target.value);
+     }}
         className="w-full border p-3 rounded-xl mb-3 outline-none focus:ring-2 focus:ring-orange-400"
       />
 
-      {/* 🔍 SEARCH BUTTON */}
-      <button
-        onClick={handleManualLocation}
-        className="w-full bg-green-500 text-white py-3 rounded-xl font-medium"
+      {suggestions.length > 0 && (
+  <div className="border rounded-xl max-h-52 overflow-auto mb-3">
+    {suggestions.map((item: any) => (
+      <div
+        key={item.place_id}
+        className="p-3 cursor-pointer hover:bg-gray-100 border-b"
+        onClick={() =>
+          handlePlaceSelect(
+            item.place_id,
+            item.description
+          )
+        }
       >
-        Search Location
-      </button>
+        {item.description}
+      </div>
+    ))}
+  </div>
+)}
 
-      {/* ⚠️ ERROR */}
+      
+
       {error && (
-        <p className="text-red-500 text-sm mt-3 text-center">{error}</p>
+        <p className="text-red-500 text-sm mt-3 text-center">
+          {error}
+        </p>
       )}
     </div>
   );
