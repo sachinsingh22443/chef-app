@@ -31,6 +31,7 @@ import CreateSubscriptionPlan from "./pages/CreateSubscriptionPlan";
 import EditSubscriptionPlan from "./pages/EditSubscriptionPlan";
 import SubscriptionPlans from "./pages/SubscriptionPlans";
 import Subscribers from "./pages/Subscribers";
+import DeleteAccount from "./pages/DeleteAccount";
 
 import NotFound from "./pages/NotFound";
 
@@ -52,12 +53,17 @@ export const router = createBrowserRouter([
       { path: "login", element: <Login /> },
       { path: "signup", element: <Signup /> },
       { path: "otp", element: <OTPVerification /> },
+      
       { path: "forgot-password", element: <ForgotPassword /> },
       { path: "status", element: <ApplicationStatus /> },
       { path: "reset-password/:token", element: <ResetPassword /> },
     ],
   },
 
+  {
+  path: "/delete-account",
+  element: <DeleteAccount />,
+},
   // 🔐 MAIN (/app)
   {
     path: "/app",
