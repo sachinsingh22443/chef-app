@@ -17,7 +17,7 @@ export default function EditSubscriptionPlan() {
   diet_type: "Veg",
 
   calories_per_day: "",
-  duration_days: "30",
+  breakfast_price: "",
 
   description: "",
   tagline: "",
@@ -64,10 +64,11 @@ export default function EditSubscriptionPlan() {
   calories_per_day: String(
     plan.calories_per_day || ""
   ),
+  breakfast_price: String(
+  plan.breakfast_price ?? ""
+),
 
-  duration_days: String(
-    plan.duration_days || "30"
-  ),
+  
 
   description: plan.description || "",
   tagline: plan.tagline || "",
@@ -75,7 +76,9 @@ export default function EditSubscriptionPlan() {
   emoji: plan.emoji || "🍱",
   color: plan.color || "#8b5cf6",
 
-  meal_type: plan.meal_type || [],
+  meal_type: (plan.meal_type || []).filter(
+  (meal: string) => meal !== "Breakfast"
+),
 
   features: (plan.features || []).join(", "),
   includes: (plan.includes || []).join(", "),
@@ -87,6 +90,24 @@ export default function EditSubscriptionPlan() {
   };
 
   const updatePlan = async () => {
+
+    if (!form.title.trim()) {
+  alert("Please enter plan name");
+  return;
+}
+
+if (!form.price || Number(form.price) <= 0) {
+  alert("Please enter subscription price");
+  return;
+}
+
+if (
+  form.breakfast_price === "" ||
+  Number(form.breakfast_price) <= 0
+) {
+  alert("Please enter a valid breakfast price");
+  return;
+}
     try {
       setLoading(true);
 
@@ -105,9 +126,10 @@ export default function EditSubscriptionPlan() {
     form.calories_per_day
   ),
 
-  duration_days: Number(
-    form.duration_days
-  ),
+  breakfast_price: Number(
+  form.breakfast_price
+),
+  
 
   description: form.description,
   tagline: form.tagline,
@@ -295,20 +317,55 @@ export default function EditSubscriptionPlan() {
     }
   />
 
-  <select
-  className="p-4 rounded-2xl border bg-white"
-  value={form.duration_days}
-  onChange={(e) =>
-    setForm({
-      ...form,
-      duration_days: e.target.value,
-    })
-  }
->
-  <option value="7">7 Days</option>
-  <option value="15">15 Days</option>
-  <option value="30">30 Days</option>
-</select>
+
+  <div className="bg-white rounded-3xl p-5 shadow-lg">
+
+  <div className="mb-4">
+    <h3 className="font-bold text-lg">
+      🍳 Breakfast
+    </h3>
+
+    <p className="text-sm text-gray-500 mt-1">
+      Set the breakfast price per day.
+      Customers can choose whether they want
+      breakfast with their subscription.
+    </p>
+  </div>
+
+  <div>
+    <label className="block text-sm font-semibold text-gray-700 mb-2">
+      Breakfast Price / Day
+    </label>
+
+    <div className="relative">
+      <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 font-semibold">
+        ₹
+      </span>
+
+      <input
+        type="number"
+        min="1"
+        placeholder="40"
+        className="w-full p-4 pl-9 rounded-2xl border"
+        value={form.breakfast_price}
+        onChange={(e) =>
+          setForm({
+            ...form,
+            breakfast_price: e.target.value,
+          })
+        }
+      />
+    </div>
+
+    <p className="text-xs text-gray-500 mt-2">
+      This price applies to new customers. Existing
+      subscriptions keep their locked breakfast price.
+    </p>
+  </div>
+
+</div>
+
+  
   <div className="mt-3 flex flex-wrap gap-2">
   {form.meal_type.map((meal) => (
     <span
@@ -329,7 +386,7 @@ export default function EditSubscriptionPlan() {
   </h3>
 
   <div className="grid grid-cols-2 gap-3">
-  {["Breakfast", "Lunch", "Dinner", "Snacks"].map(
+  {["Lunch", "Dinner", "Snacks"].map(
     (meal) => {
       const selected =
         form.meal_type.includes(meal);
@@ -459,8 +516,8 @@ export default function EditSubscriptionPlan() {
 
     <div className="text-right">
       <p className="text-white/70 text-sm">
-    {form.duration_days} Days
-</p>
+    30 Days
+    </p>
 
       <p className="text-3xl font-bold">
         ₹{form.price || 0}
@@ -492,9 +549,9 @@ export default function EditSubscriptionPlan() {
     {form.calories_per_day || 0} kcal/day
   </div>
 
-  <div className="text-sm text-white/90">
-    {form.duration_days || 0} days
-  </div>
+  <div className="text-sm text-white/90 mt-1">
+  🍳 Breakfast ₹{form.breakfast_price || 0}/day
+</div>
 </div>
 
     <div className="sticky bottom-4">

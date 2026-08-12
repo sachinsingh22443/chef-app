@@ -101,30 +101,53 @@ export default function SubscriptionPlans() {
                   {plan.tagline}
                 </p>
 
-                <div className="flex flex-wrap gap-2 mt-2">
-  <span className="bg-orange-100 text-orange-600 px-2 py-1 rounded-full text-xs">
-    {plan.goal}
-  </span>
+              <div className="flex flex-wrap gap-2 mt-2">
+                 <span className="bg-orange-100 text-orange-600 px-2 py-1 rounded-full text-xs">
+                 {plan.goal}
+                </span>
 
-  <span className="bg-green-100 text-green-600 px-2 py-1 rounded-full text-xs">
-    {plan.diet_type}
-  </span>
+               <span className="bg-green-100 text-green-600 px-2 py-1 rounded-full text-xs">
+               {plan.diet_type}
+               </span>
 
-  <span className="bg-blue-100 text-blue-600 px-2 py-1 rounded-full text-xs">
-    {plan.duration_days} Days
-  </span>
+                 
 
-  <span className="bg-purple-100 text-purple-600 px-2 py-1 rounded-full text-xs">
-    {plan.plan_type === "normal" && "🥗 Normal"}
-    {plan.plan_type === "dietician" && "👨‍⚕️ Dietician"}
-    {plan.plan_type === "gym" && "💪 Gym + Trainer"}
-  </span>
-</div>
+                   <span className="bg-purple-100 text-purple-600 px-2 py-1 rounded-full text-xs">
+                   {plan.plan_type === "normal" && "🥗 Normal"}
+                    {plan.plan_type === "dietician" && "👨‍⚕️ Dietician"}
+                    {plan.plan_type === "gym" && "💪 Gym + Trainer"}
+                </span>
               </div>
 
-              <span className="bg-purple-100 text-purple-700 px-3 py-1 rounded-full font-bold">
-  ₹{plan.price}
-</span>
+
+              </div>
+
+
+
+
+
+
+              <div className="text-right">
+
+  <span className="bg-purple-100 text-purple-700 px-3 py-1 rounded-full font-bold">
+    ₹{plan.price}
+  </span>
+
+  <p className="text-xs text-gray-500 mt-2">
+    30 days
+  </p>
+
+  {plan.breakfast_price != null && (
+    <p className="text-xs text-orange-600 font-semibold mt-1">
+      🍳 Breakfast ₹{plan.breakfast_price}/day
+    </p>
+  )}
+
+</div>
+
+
+
+
             </div>
 
             <p className="mt-3 text-gray-600 text-sm line-clamp-3">
