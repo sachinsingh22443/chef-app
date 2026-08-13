@@ -1487,5 +1487,6 @@ const handleImageChange = (file: File | null) => {
 
     </form>
 
-  </div>
+    </div>
 );
+}
