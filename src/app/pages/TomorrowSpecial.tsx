@@ -69,22 +69,44 @@ export default function TomorrowSpecial(){
   // 🔥 FETCH SPECIALS
   // =========================
   const fetchSpecials = async () => {
-    try {
-      const res = await axios.get(
-        "https://chef-backend-qh12.onrender.com/tomorrow-special/all"
-      );
+  try {
+    const token = localStorage.getItem("token");
 
-      setSpecials(res.data);
-
-      res.data.forEach((item: any) => {
-        fetchRating(item.chef_id);
-      });
-
-    } catch (err) {
-      console.error("Fetch error", err);
+    if (!token) {
+      toast.error("Please login again");
+      return;
     }
-  };
 
+    const res = await axios.get(
+      "https://chef-backend-qh12.onrender.com/tomorrow-special/",
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      }
+    );
+
+    setSpecials(res.data);
+
+    // Fetch ratings only when chef_id is available
+    res.data.forEach((item: any) => {
+      if (item.chef_id) {
+        fetchRating(item.chef_id);
+      }
+    });
+
+  } catch (err: any) {
+    console.error(
+      "FETCH MY SPECIALS ERROR:",
+      err.response?.data || err
+    );
+
+    toast.error(
+      err.response?.data?.detail ||
+      "Failed to load your Tomorrow Specials"
+    );
+  }
+};
   // =========================
   // 🔥 FETCH RATING
   // =========================
