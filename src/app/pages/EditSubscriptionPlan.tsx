@@ -15,6 +15,9 @@ export default function EditSubscriptionPlan() {
   plan_type: "normal",
   goal: "Weight Loss",
   diet_type: "Veg",
+  breakfast_available: false,
+  lunch_price: "",
+  dinner_price: "",
 
   calories_per_day: "",
   breakfast_price: "",
@@ -64,8 +67,18 @@ export default function EditSubscriptionPlan() {
   calories_per_day: String(
     plan.calories_per_day || ""
   ),
-  breakfast_price: String(
+  breakfast_available: Boolean(plan.breakfast_available),
+
+breakfast_price: String(
   plan.breakfast_price ?? ""
+),
+
+lunch_price: String(
+  plan.lunch_price ?? ""
+),
+
+dinner_price: String(
+  plan.dinner_price ?? ""
 ),
 
   
@@ -126,9 +139,21 @@ if (
     form.calories_per_day
   ),
 
-  breakfast_price: Number(
-  form.breakfast_price
-),
+  
+
+breakfast_available: form.breakfast_available,
+
+breakfast_price: Number(form.breakfast_price),
+
+lunch_price:
+  form.lunch_price === ""
+    ? null
+    : Number(form.lunch_price),
+
+dinner_price:
+  form.dinner_price === ""
+    ? null
+    : Number(form.dinner_price),
   
 
   description: form.description,
