@@ -160,10 +160,21 @@ if (
 
       navigate("/app/subscription-plans");
 
-    } catch (err) {
-      console.log(err);
-      alert("Update Failed");
-    } finally {
+    } catch (err: any) {
+  console.error("UPDATE PLAN ERROR:", err);
+
+  const message =
+    err?.response?.data?.detail ||
+    err?.response?.data?.message ||
+    err?.message ||
+    "Update Failed";
+
+  alert(
+    typeof message === "string"
+      ? message
+      : JSON.stringify(message)
+  );
+} finally {
       setLoading(false);
     }
   };
