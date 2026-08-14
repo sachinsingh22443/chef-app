@@ -22,6 +22,7 @@ export default function TomorrowSpecial(){
   const [formData, setFormData] = useState<any>({
   dishName: "",
   description: "",
+  specialDate: "",
 
   // Pricing
   price: "",
@@ -52,6 +53,61 @@ export default function TomorrowSpecial(){
   const [creating, setCreating] = useState(false);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [now, setNow] = useState(Date.now());
+
+  const [history, setHistory] = useState<any[]>([]);
+  const [showHistory, setShowHistory] = useState(false);
+  const [historyLoading, setHistoryLoading] = useState(false);
+
+  const [historyDate, setHistoryDate] = useState("");
+  const [historyFromDate, setHistoryFromDate] = useState("");
+  const [historyToDate, setHistoryToDate] = useState("");
+
+
+  const fetchHistory = async () => {
+  try {
+    setHistoryLoading(true);
+
+    const token = localStorage.getItem("token");
+
+    let url =
+      "https://chef-backend-qh12.onrender.com/tomorrow-special/history";
+
+    const params = new URLSearchParams();
+
+    if (historyDate) {
+      params.append("date_filter", historyDate);
+    } else {
+      if (historyFromDate) {
+        params.append("from_date", historyFromDate);
+      }
+
+      if (historyToDate) {
+        params.append("to_date", historyToDate);
+      }
+    }
+
+    if (params.toString()) {
+      url += `?${params.toString()}`;
+    }
+
+    const res = await axios.get(url, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+
+    setHistory(res.data.specials || []);
+  } catch (err: any) {
+    console.error("HISTORY ERROR:", err);
+
+    toast.error(
+      err.response?.data?.detail ||
+      "Failed to load special history"
+    );
+  } finally {
+    setHistoryLoading(false);
+  }
+};
 
   useEffect(() => {
     fetchSpecials();
@@ -159,15 +215,11 @@ const getRemaining = (item: any) => {
 
 
 const getCutoff = (item: any) => {
-  if (!item.cutoff_time) {
+  if (!item.cutoff_time || !item.special_date) {
     return null;
   }
 
   try {
-    const created = new Date(
-      item.created_at || Date.now()
-    );
-
     const [hours, minutes] = String(item.cutoff_time)
       .split(":")
       .map(Number);
@@ -179,9 +231,12 @@ const getCutoff = (item: any) => {
       return null;
     }
 
-    const cutoff = new Date(created);
-
-    cutoff.setHours(hours, minutes, 0, 0);
+    // special_date = jis din customer order kar sakta hai
+    const cutoff = new Date(
+      `${item.special_date}T${String(hours).padStart(2, "0")}:${String(
+        minutes
+      ).padStart(2, "0")}:00`
+    );
 
     return cutoff;
   } catch {
@@ -276,6 +331,21 @@ if (!maxPlates || maxPlates <= 0) {
   return;
 }
 
+if (!formData.specialDate) {
+  toast.error("Please select special date");
+  return;
+}
+
+const today = new Date();
+
+const todayString =
+  `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}-${String(today.getDate()).padStart(2, "0")}`;
+
+if (formData.specialDate <= todayString) {
+  toast.error("Special date must be tomorrow or a future date");
+  return;
+}
+
 if (!formData.cutoffTime) {
   toast.error("Please select cutoff time");
   return;
@@ -300,7 +370,9 @@ if (formData.originalPrice) {
 }
 
 form.append("max_plates", formData.maxPlates);
+form.append("special_date", formData.specialDate);
 form.append("cutoff_time", formData.cutoffTime);
+
 
 if (formData.calories) {
   form.append("calories", formData.calories);
@@ -351,6 +423,7 @@ form.append("food_type", formData.foodType);
     setFormData({
   dishName: "",
   description: "",
+  specialDate: "",
   price: "",
   originalPrice: "",
   maxPlates: "",
@@ -416,46 +489,9 @@ const handleImageChange = (file: File | null) => {
   // =========================
   // 🔥 PRE-ORDER
   // =========================
-  const handlePreOrder = async (id: string) => {
-    try {
-      await axios.post(
-        "https://chef-backend-qh12.onrender.com/tomorrow-special/pre-order",
-        {
-          special_id: id,
-          quantity: 1,
-        },
-        {
-          headers: {
-            Authorization: `Bearer ${localStorage.getItem("token")}`,
-          },
-        }
-      );
+  
 
-      toast.success("Pre-order success");
-      fetchSpecials();
-
-    } catch (err: any) {
-      toast.error(err.response?.data?.detail || "Error");
-    }
-  };
-
-  const isValidTime = (item: any) => {
-    try {
-      const now = new Date();
-      const createdDate = new Date(item.created_at || Date.now());
-
-      const [hours, minutes] = item.cutoff_time.split(":");
-
-      const cutoff = new Date(createdDate);
-      cutoff.setHours(Number(hours));
-      cutoff.setMinutes(Number(minutes));
-      cutoff.setSeconds(0);
-
-      return now <= cutoff;
-    } catch {
-      return true;
-    }
-  };
+  
 
   return (
   <div className="min-h-screen bg-[#FFF8F0] pb-24">
@@ -505,14 +541,36 @@ const handleImageChange = (file: File | null) => {
             ⭐ Tomorrow Specials
           </h2>
 
+
+  
+
+  <div className="flex items-center gap-2">
+  <button
+    type="button"
+    onClick={() => {
+      setShowHistory(true);
+      fetchHistory();
+    }}
+    className="text-xs font-bold bg-purple-100 text-purple-700 px-3 py-2 rounded-xl hover:bg-purple-200 transition"
+  >
+    📜 History
+  </button>
+
+  <span className="text-xs font-semibold bg-orange-100 text-orange-600 px-3 py-1.5 rounded-full">
+    {specials.length} Specials
+  </span>
+
+</div>
+
+
+
+
           <p className="text-xs text-gray-500 mt-1">
             Fresh • Limited • Chef Special
           </p>
         </div>
 
-        <span className="text-xs font-semibold bg-orange-100 text-orange-600 px-3 py-1.5 rounded-full">
-          {specials.length} Specials
-        </span>
+       
 
       </div>
 
@@ -684,9 +742,22 @@ const handleImageChange = (file: File | null) => {
                 {/* DISH NAME */}
 
                 <h3 className="text-2xl font-bold text-gray-900">
-                  {item.dish_name}
-                </h3>
+  {item.dish_name}
+</h3>
 
+{item.special_date && (
+  <div className="flex flex-wrap items-center gap-3 mt-2">
+    <span className="text-xs font-semibold bg-purple-50 text-purple-700 px-3 py-1.5 rounded-full">
+      📅 Special Date: {item.special_date}
+    </span>
+
+    {item.cutoff_time && (
+      <span className="text-xs font-semibold bg-orange-50 text-orange-700 px-3 py-1.5 rounded-full">
+        ⏰ Order till {item.cutoff_time}
+      </span>
+    )}
+  </div>
+)}
 
                 {/* CHEF + RATING */}
 
@@ -962,28 +1033,20 @@ const handleImageChange = (file: File | null) => {
 
                   {/* PRE ORDER */}
 
-                  <button
-                    type="button"
-                    onClick={() =>
-                      handlePreOrder(item.id)
-                    }
-                    disabled={
-                      remaining <= 0 ||
-                      countdown.expired
-                    }
-                    className={`px-5 py-3 rounded-2xl font-bold text-sm transition ${
-                      remaining <= 0 ||
-                      countdown.expired
-                        ? "bg-gray-300 text-gray-500 cursor-not-allowed"
-                        : "bg-orange-500 text-white hover:bg-orange-600 active:scale-95"
-                    }`}
-                  >
-                    {countdown.expired
-                      ? "Ordering Closed"
-                      : remaining <= 0
-                      ? "Sold Out"
-                      : "Pre-Order"}
-                  </button>
+                  
+                <div
+  className={`px-5 py-3 rounded-2xl font-bold text-sm ${
+    remaining <= 0 || countdown.expired
+      ? "bg-gray-100 text-gray-500"
+      : "bg-green-50 text-green-700"
+  }`}
+>
+  {countdown.expired
+    ? "Ordering Closed"
+    : remaining <= 0
+    ? "Sold Out"
+    : "Accepting Orders"}
+</div>
 
                 </div>
 
@@ -1038,7 +1101,281 @@ const handleImageChange = (file: File | null) => {
 
     </div>
 
+   {/* ===================================================== */}
+{/* 📜 MY SPECIAL HISTORY */}
+{/* ===================================================== */}
 
+{showHistory && (
+  <div className="mt-8 bg-white rounded-3xl p-5 shadow-sm border border-gray-100">
+
+    {/* HEADER */}
+    <div className="flex items-center justify-between gap-3 mb-5">
+
+      <div>
+        <h2 className="text-xl font-bold text-gray-900">
+          📜 My Special History
+        </h2>
+
+        <p className="text-xs text-gray-500 mt-1">
+          View your previous Tomorrow Specials
+        </p>
+      </div>
+
+      <button
+        type="button"
+        onClick={() => setShowHistory(false)}
+        className="text-sm font-semibold text-gray-500 hover:text-gray-900"
+      >
+        ✕ Close
+      </button>
+
+    </div>
+
+
+    {/* FILTER */}
+    <div className="bg-gray-50 rounded-2xl p-4 space-y-4">
+
+      {/* SPECIFIC DATE */}
+      <div>
+        <label className="text-xs font-semibold text-gray-600">
+          Specific Date
+        </label>
+
+        <input
+          type="date"
+          value={historyDate}
+          onChange={(e) => {
+            setHistoryDate(e.target.value);
+
+            if (e.target.value) {
+              setHistoryFromDate("");
+              setHistoryToDate("");
+            }
+          }}
+          className="w-full mt-1 p-3 rounded-xl border border-gray-200 bg-white"
+        />
+      </div>
+
+
+      {/* DATE RANGE */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+
+        <div>
+          <label className="text-xs font-semibold text-gray-600">
+            From Date
+          </label>
+
+          <input
+            type="date"
+            value={historyFromDate}
+            onChange={(e) => {
+              setHistoryFromDate(e.target.value);
+              setHistoryDate("");
+            }}
+            className="w-full mt-1 p-3 rounded-xl border border-gray-200 bg-white"
+          />
+        </div>
+
+
+        <div>
+          <label className="text-xs font-semibold text-gray-600">
+            To Date
+          </label>
+
+          <input
+            type="date"
+            value={historyToDate}
+            onChange={(e) => {
+              setHistoryToDate(e.target.value);
+              setHistoryDate("");
+            }}
+            className="w-full mt-1 p-3 rounded-xl border border-gray-200 bg-white"
+          />
+        </div>
+
+      </div>
+
+
+      {/* BUTTONS */}
+      <div className="flex gap-2">
+
+        <button
+          type="button"
+          onClick={fetchHistory}
+          disabled={historyLoading}
+          className="flex-1 bg-purple-600 text-white py-3 rounded-xl font-bold text-sm"
+        >
+          {historyLoading ? "Loading..." : "Apply Filter"}
+        </button>
+
+        <button
+          type="button"
+          onClick={() => {
+            setHistoryDate("");
+            setHistoryFromDate("");
+            setHistoryToDate("");
+            setTimeout(fetchHistory, 0);
+          }}
+          className="px-4 bg-gray-200 text-gray-700 py-3 rounded-xl font-bold text-sm"
+        >
+          Reset
+        </button>
+
+      </div>
+
+    </div>
+
+
+    {/* HISTORY LIST */}
+    <div className="mt-5 space-y-4">
+
+      {historyLoading ? (
+
+        <div className="text-center py-8 text-sm text-gray-500">
+          Loading history...
+        </div>
+
+      ) : history.length === 0 ? (
+
+        <div className="text-center py-8">
+
+          <div className="text-5xl mb-3">
+            📭
+          </div>
+
+          <p className="font-semibold text-gray-700">
+            No special history found
+          </p>
+
+          <p className="text-xs text-gray-500 mt-1">
+            Try another date or date range.
+          </p>
+
+        </div>
+
+      ) : (
+
+        history.map((item: any) => {
+
+          const totalPlates =
+            Number(item.max_plates || 0);
+
+          const orderedPlates =
+            Number(item.pre_orders || 0);
+
+          const remainingPlates =
+            Math.max(
+              0,
+              totalPlates - orderedPlates
+            );
+
+          return (
+            <div
+              key={item.id}
+              className="border border-gray-100 rounded-2xl p-4"
+            >
+
+              <div className="flex gap-4">
+
+                {/* IMAGE */}
+                {item.image_url ? (
+
+                  <img
+                    src={item.image_url}
+                    alt={item.dish_name}
+                    className="w-20 h-20 rounded-2xl object-cover"
+                  />
+
+                ) : (
+
+                  <div className="w-20 h-20 rounded-2xl bg-orange-50 flex items-center justify-center text-3xl">
+                    🍱
+                  </div>
+
+                )}
+
+
+                {/* INFO */}
+                <div className="flex-1 min-w-0">
+
+                  <div className="flex items-start justify-between gap-2">
+
+                    <h3 className="font-bold text-gray-900">
+                      {item.dish_name}
+                    </h3>
+
+                    <span
+                      className={`text-[10px] font-bold px-2 py-1 rounded-full ${
+                        remainingPlates <= 0
+                          ? "bg-red-100 text-red-700"
+                          : "bg-green-100 text-green-700"
+                      }`}
+                    >
+                      {remainingPlates <= 0
+                        ? "SOLD OUT"
+                        : "AVAILABLE"}
+                    </span>
+
+                  </div>
+
+
+                  <p className="text-xs text-gray-500 mt-1">
+                    📅 {item.special_date}
+                  </p>
+
+                  <p className="text-xs text-gray-500 mt-1">
+                    ⏰ Order till {item.cutoff_time}
+                  </p>
+
+                  <p className="text-sm font-bold text-orange-600 mt-2">
+                    ₹{item.price}
+                  </p>
+
+                </div>
+
+              </div>
+
+
+              {/* PLATES */}
+              <div className="mt-4 bg-gray-50 rounded-xl p-3">
+
+                <div className="flex justify-between text-xs">
+
+                  <span className="text-gray-500">
+                    Plates
+                  </span>
+
+                  <span className="font-bold text-gray-800">
+                    {orderedPlates} ordered / {totalPlates}
+                  </span>
+
+                </div>
+
+                <div className="flex justify-between text-xs mt-1">
+
+                  <span className="text-gray-500">
+                    Remaining
+                  </span>
+
+                  <span className="font-bold text-gray-800">
+                    {remainingPlates}
+                  </span>
+
+                </div>
+
+              </div>
+
+            </div>
+          );
+
+        })
+
+      )}
+
+    </div>
+
+  </div>
+)}
     {/* ===================================================== */}
     {/* ADD SPECIAL FORM */}
     {/* ===================================================== */}
@@ -1102,6 +1439,35 @@ const handleImageChange = (file: File | null) => {
         />
 
       </div>
+
+
+      <div className="bg-white rounded-3xl p-5 shadow-sm space-y-4">
+
+  <div>
+    <h3 className="font-bold text-gray-900">
+      📅 Special Date
+    </h3>
+
+    <p className="text-xs text-gray-500 mt-1">
+      Select the date for which customers can order this special.
+    </p>
+  </div>
+
+  <Input
+    type="date"
+    value={formData.specialDate}
+    min={(() => {
+  const tomorrow = new Date();
+  tomorrow.setDate(tomorrow.getDate() + 1);
+  return tomorrow.toISOString().split("T")[0];
+})()}
+    onChange={(e) =>
+      setField("specialDate", e.target.value)
+    }
+    required
+  />
+
+</div>
 
 
       {/* ================================================= */}

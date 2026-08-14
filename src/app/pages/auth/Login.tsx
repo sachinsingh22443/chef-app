@@ -17,38 +17,126 @@ export default function Login() {
   });
 
   useEffect(() => {
-  const token = localStorage.getItem("token");
+  const checkLogin = async () => {
+    let token = localStorage.getItem("token");
+    const refreshToken = localStorage.getItem("refresh_token");
 
-  if (!token) return;
+    // ==========================================
+    // NO TOKEN
+    // ==========================================
 
-  try {
-    const payload = JSON.parse(atob(token.split(".")[1]));
-
-    if (payload.exp * 1000 < Date.now()) {
-      localStorage.removeItem("token");
+    if (!token) {
       return;
     }
-  } catch {
-    localStorage.removeItem("token");
-    return;
-  }
 
-  fetch("https://chef-backend-qh12.onrender.com/users/me", {
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
-  })
-    .then((res) => {
-      if (res.ok) {
+    try {
+      // ==========================================
+      // 1️⃣ CHECK CURRENT ACCESS TOKEN
+      // ==========================================
+
+      const meRes = await fetch(
+        "https://chef-backend-qh12.onrender.com/users/me",
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      // ==========================================
+      // ACCESS TOKEN VALID
+      // ==========================================
+
+      if (meRes.ok) {
         navigate("/app");
-      } else {
-        localStorage.removeItem("token");
+        return;
       }
-    })
-    .catch(() => {
+
+      // ==========================================
+      // ACCESS TOKEN EXPIRED
+      // TRY REFRESH TOKEN
+      // ==========================================
+
+      if (meRes.status === 401 && refreshToken) {
+        const refreshRes = await fetch(
+          "https://chef-backend-qh12.onrender.com/auth/refresh",
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              refresh_token: refreshToken,
+            }),
+          }
+        );
+
+        if (!refreshRes.ok) {
+          throw new Error("Refresh token expired");
+        }
+
+        const refreshData = await refreshRes.json();
+
+        // ==========================================
+        // SAVE NEW ACCESS TOKEN
+        // ==========================================
+
+        localStorage.setItem(
+          "token",
+          refreshData.access_token
+        );
+
+        // ==========================================
+        // SAVE ROTATED REFRESH TOKEN
+        // ==========================================
+
+        if (refreshData.refresh_token) {
+          localStorage.setItem(
+            "refresh_token",
+            refreshData.refresh_token
+          );
+        }
+
+        // ==========================================
+        // VERIFY NEW ACCESS TOKEN
+        // ==========================================
+
+        const newMeRes = await fetch(
+          "https://chef-backend-qh12.onrender.com/users/me",
+          {
+            headers: {
+              Authorization: `Bearer ${refreshData.access_token}`,
+            },
+          }
+        );
+
+        if (newMeRes.ok) {
+          navigate("/app");
+          return;
+        }
+
+        throw new Error("New access token invalid");
+      }
+
+      // ==========================================
+      // TOKEN INVALID + NO REFRESH TOKEN
+      // ==========================================
+
+      throw new Error("Unauthorized");
+
+    } catch (error) {
+      console.error("AUTH CHECK ERROR:", error);
+
       localStorage.removeItem("token");
-    });
+      localStorage.removeItem("refresh_token");
+      localStorage.removeItem("user_id");
+    }
+  };
+
+  checkLogin();
 }, [navigate]);
+
+
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -76,8 +164,31 @@ else if (res.data.application_status === "rejected") {
   navigate("/auth/status");
 }
 else {
-  // Approved user only
-  localStorage.setItem("token", res.data.access_token);
+  // ==========================================
+  // ✅ APPROVED USER - SAVE LOGIN SESSION
+  // ==========================================
+
+  localStorage.setItem(
+    "token",
+    res.data.access_token
+  );
+
+  // 🔥 IMPORTANT: Save refresh token
+  if (res.data.refresh_token) {
+    localStorage.setItem(
+      "refresh_token",
+      res.data.refresh_token
+    );
+  }
+
+  // Save user ID if backend provides it
+  if (res.data.user_id) {
+    localStorage.setItem(
+      "user_id",
+      res.data.user_id
+    );
+  }
+
   navigate("/app");
 }
 
