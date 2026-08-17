@@ -51,18 +51,45 @@ export default function Orders() {
           : "";
 
         const formatted = {
-          id: o.id,
-          customer: o.customer_name || "Guest",
-          items: items,
-          time: o.created_at
-            ? new Date(o.created_at).toLocaleString()
-            : "Just now",
-          amount: o.total_price || 0,
-          status: o.status,
-          prepTime: o.status === "ready" ? "Ready" : "15 min",
-          address: o.address || "N/A",
-          phone: o.phone || "N/A",
-        };
+  id: o.id,
+
+  customer: o.customer_name || "Guest",
+
+  items: items,
+
+  time: o.created_at
+    ? new Date(o.created_at).toLocaleString("en-IN", {
+        timeZone: "Asia/Kolkata",
+        day: "2-digit",
+        month: "short",
+        year: "numeric",
+        hour: "2-digit",
+        minute: "2-digit",
+      })
+    : "Just now",
+
+  amount: o.total_price || 0,
+
+  status: o.status,
+
+  prepTime:
+    o.status === "ready"
+      ? "Ready"
+      : "15 min",
+
+  address: o.address || "N/A",
+
+  phone: o.phone || "N/A",
+
+  // Tomorrow Special
+  isTomorrowSpecial:
+    o.is_tomorrow_special === true ||
+    o.items?.some(
+      (item: any) =>
+        item.special_id ||
+        item.is_tomorrow_special === true
+    ),
+};
 
         if (o.status === "pending") {
   newArr.push(formatted);
@@ -229,9 +256,23 @@ else if (o.status === "delivered") {
                 onClick={() => navigate(`/orders/${order.id}`)}
                 className="bg-white rounded-3xl p-5 shadow-lg border-2 border-blue-200 cursor-pointer"
               >
-                <p className="font-bold">{order.customer}</p>
-                <p>{order.items}</p>
-                <p className="text-sm text-gray-500">{order.address}</p>
+                <p className="font-bold">
+  {order.customer}
+</p>
+
+{order.isTomorrowSpecial && (
+  <div className="mt-2 inline-flex items-center gap-1 px-3 py-1 bg-purple-100 text-purple-700 rounded-full text-xs font-bold">
+    ✨ Tomorrow Special
+  </div>
+)}
+
+<p className="mt-2">
+  {order.items}
+</p>
+
+<p className="text-sm text-gray-500">
+  {order.address}
+</p>
                 <div className="mt-2 inline-block px-3 py-1 bg-yellow-100 text-yellow-700 rounded-full text-xs font-medium">
                {getStatusLabel(order.status)}
                </div>
@@ -274,11 +315,23 @@ else if (o.status === "delivered") {
                 onClick={() => navigate(`/orders/${order.id}`)}
                 className="bg-white rounded-3xl p-5 shadow-lg cursor-pointer"
               >
-                <p className="font-bold">{order.customer}</p>
+                <p className="font-bold">
+  {order.customer}
+</p>
 
-<p>{order.items}</p>
+{order.isTomorrowSpecial && (
+  <div className="mt-2 inline-flex items-center gap-1 px-3 py-1 bg-purple-100 text-purple-700 rounded-full text-xs font-bold">
+    ✨ Tomorrow Special
+  </div>
+)}
 
-<p className="text-sm text-gray-500">{order.address}</p>
+<p className="mt-2">
+  {order.items}
+</p>
+
+<p className="text-sm text-gray-500">
+  {order.address}
+</p>
 
 <p className="text-sm font-medium text-green-600 mt-1">
   📞 {order.phone}
@@ -378,9 +431,23 @@ else if (o.status === "delivered") {
                 onClick={() => navigate(`/orders/${order.id}`)}
                 className="bg-white rounded-3xl p-5 shadow-lg cursor-pointer"
               >
-                <p className="font-bold">{order.customer}</p>
-                <p>{order.items}</p>
-                <p className="text-sm text-gray-500">{order.address}</p>
+                <p className="font-bold">
+  {order.customer}
+</p>
+
+{order.isTomorrowSpecial && (
+  <div className="mt-2 inline-flex items-center gap-1 px-3 py-1 bg-purple-100 text-purple-700 rounded-full text-xs font-bold">
+    ✨ Tomorrow Special
+  </div>
+)}
+
+<p className="mt-2">
+  {order.items}
+</p>
+
+<p className="text-sm text-gray-500">
+  {order.address}
+</p>
                 <div className="mt-2 inline-block px-3 py-1 bg-green-100 text-green-700 rounded-full text-xs font-medium">
               {getStatusLabel(order.status)}
               </div>
