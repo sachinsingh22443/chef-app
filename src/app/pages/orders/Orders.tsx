@@ -17,9 +17,15 @@ export default function Orders() {
   const [loadingId, setLoadingId] = useState<string | null>(null); // 🔥 FIX
 
   useEffect(() => {
+  fetchOrders();
+  fetchSubscriptions();
+
+  const interval = setInterval(() => {
     fetchOrders();
-    fetchSubscriptions();
-  }, []);
+  }, 5000);
+
+  return () => clearInterval(interval);
+}, []);
 
   // =========================
   // 🔥 FETCH ORDERS
