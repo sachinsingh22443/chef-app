@@ -194,58 +194,45 @@ export default function MenuCycle() {
   // =======================================================
 
   const fetchCycles = async () => {
-    try {
-      setLoadingCycles(true);
+  try {
+    setLoadingCycles(true);
 
-      const response =
-        await API.get("/menu-cycle/");
+    const response = await API.get("/menu-cycle/");
 
-      /*
-       * Backend can return:
-       *
-       * [
-       *   {
-       *     cycle_start_date,
-       *     total_days,
-       *     items
-       *   }
-       * ]
-       *
-       * OR a single cycle object.
-       */
+    console.log("EXISTING CYCLES RESPONSE:", response.data);
 
-      if (
-        response.data &&
-        !Array.isArray(response.data) &&
-        Array.isArray(
-          response.data.items
-        )
-      ) {
-        setCycles([
-          response.data,
-        ]);
-      } else if (
-        Array.isArray(response.data)
-      ) {
-        setCycles(response.data);
-      } else {
-        setCycles([]);
-      }
-    } catch (err: any) {
-      console.error(
-        "FETCH CYCLES ERROR:",
-        err
-      );
+    const data = response.data;
 
-      /*
-       * Existing cycles are not required
-       * to create a new cycle.
-       */
+    // Backend response:
+    // {
+    //   success: true,
+    //   cycles: [...]
+    // }
+
+    if (Array.isArray(data?.cycles)) {
+      setCycles(data.cycles);
+    } else if (Array.isArray(data)) {
+      setCycles(data);
+    } else if (
+      data &&
+      Array.isArray(data.items)
+    ) {
+      setCycles([data]);
+    } else {
       setCycles([]);
-    } finally {
-      setLoadingCycles(false);
     }
-  };
+
+  } catch (err: any) {
+    console.error(
+      "FETCH CYCLES ERROR:",
+      err.response?.data || err
+    );
+
+    setCycles([]);
+  } finally {
+    setLoadingCycles(false);
+  }
+};
 
   // =======================================================
   // INITIAL LOAD
