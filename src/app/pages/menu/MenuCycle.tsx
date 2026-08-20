@@ -798,31 +798,7 @@ export default function MenuCycle() {
     30-DAY MENU CYCLE
 ================================================= */}
 
-<div className="bg-white rounded-3xl p-5 shadow-lg mb-6">
 
-  <div className="flex items-center justify-between gap-3">
-
-    <div>
-      <h2 className="font-bold text-lg">
-        30-Day Menu Cycle
-      </h2>
-
-      <p className="text-sm text-gray-500 mt-1">
-        Plan which menu will be served each day
-      </p>
-    </div>
-
-    <button
-      type="button"
-      onClick={() => navigate("/menu/cycle")}
-      className="px-5 py-3 bg-orange-500 text-white rounded-xl font-semibold shadow-sm active:scale-95"
-    >
-      Manage Cycle
-    </button>
-
-  </div>
-
-</div>
 
         {/* =================================================
             MENUS

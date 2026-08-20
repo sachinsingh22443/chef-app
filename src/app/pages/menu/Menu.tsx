@@ -155,133 +155,319 @@ export default function Menu() {
     }
   };
 
-  return (
+    return (
     <div className="min-h-screen bg-gray-50">
-      
-      {/* Header */}
+
+      {/* =================================================
+          HEADER
+      ================================================= */}
+
       <div className="bg-gradient-to-br from-orange-400 via-orange-300 to-purple-500 rounded-b-[40px] p-6 pb-8">
+
         <div className="flex justify-between items-center mb-6">
-          <h1 className="text-3xl font-bold text-white">My Menu</h1>
+
+          <h1 className="text-3xl font-bold text-white">
+            My Menu
+          </h1>
+
           <button
             onClick={() => navigate("/menu/add")}
             className="w-12 h-12 bg-white rounded-2xl flex items-center justify-center shadow-lg active:scale-95"
           >
             <Plus className="w-6 h-6 text-orange-500" />
           </button>
+
         </div>
 
         {/* Search */}
+
         <div className="relative">
+
           <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+
           <Input
             type="text"
             placeholder="Search dishes..."
             value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
+            onChange={(e) =>
+              setSearchQuery(e.target.value)
+            }
             className="pl-12 py-6 bg-white rounded-2xl border-none"
           />
+
         </div>
+
       </div>
+
+      {/* =================================================
+          MAIN CONTENT
+      ================================================= */}
 
       <div className="px-6 py-6">
 
-        {/* Stats */}
+        {/* =================================================
+            STATS
+        ================================================= */}
+
         <div className="grid grid-cols-3 gap-3 mb-6">
+
           <div className="bg-white rounded-2xl p-4 shadow-md text-center">
-            <p className="text-2xl font-bold">{menuItems.length}</p>
-            <p className="text-xs text-gray-500">Total Items</p>
+
+            <p className="text-2xl font-bold">
+              {menuItems.length}
+            </p>
+
+            <p className="text-xs text-gray-500">
+              Total Items
+            </p>
+
           </div>
+
           <div className="bg-white rounded-2xl p-4 shadow-md text-center">
+
             <p className="text-2xl font-bold text-green-600">
-              {menuItems.filter(i => i.inStock).length}
+              {
+                menuItems.filter(
+                  (i) => i.inStock
+                ).length
+              }
             </p>
-            <p className="text-xs text-gray-500">In Stock</p>
+
+            <p className="text-xs text-gray-500">
+              In Stock
+            </p>
+
           </div>
+
           <div className="bg-white rounded-2xl p-4 shadow-md text-center">
+
             <p className="text-2xl font-bold text-red-600">
-              {menuItems.filter(i => !i.inStock).length}
+              {
+                menuItems.filter(
+                  (i) => !i.inStock
+                ).length
+              }
             </p>
-            <p className="text-xs text-gray-500">Out of Stock</p>
+
+            <p className="text-xs text-gray-500">
+              Out of Stock
+            </p>
+
           </div>
+
         </div>
 
-        {/* Menu List */}
+        {/* =================================================
+            MENU LIST
+        ================================================= */}
+
         <div className="space-y-4">
+
           {filteredItems.map((item) => (
-            <div key={item.id} className="bg-white rounded-3xl p-5 shadow-lg border">
+
+            <div
+              key={item.id}
+              className="bg-white rounded-3xl p-5 shadow-lg border"
+            >
+
               <div className="flex gap-4">
 
-                {/* 🔥 IMAGE FIX (CLOUDINARY) */}
+                {/* =================================================
+                    IMAGE
+                ================================================= */}
+
                 <div className="flex gap-2 flex-shrink-0">
-                  {item.image_urls && item.image_urls.length > 0 ? (
-                    item.image_urls.slice(0, 3).map((img: string, i: number) => (
-                      <img
-                        key={i}
-                        src={img} // ✅ DIRECT URL
-                        onError={(e: any) => {
-                          e.target.src = "https://via.placeholder.com/100";
-                        }}
-                        alt={item.name}
-                        className="w-20 h-20 object-cover rounded-xl"
-                      />
-                    ))
+
+                  {item.image_urls &&
+                  item.image_urls.length > 0 ? (
+
+                    item.image_urls
+                      .slice(0, 3)
+                      .map(
+                        (
+                          img: string,
+                          i: number
+                        ) => (
+
+                          <img
+                            key={i}
+                            src={img}
+                            onError={(
+                              e: any
+                            ) => {
+                              e.target.src =
+                                "https://via.placeholder.com/100";
+                            }}
+                            alt={item.name}
+                            className="w-20 h-20 object-cover rounded-xl"
+                          />
+
+                        )
+                      )
+
                   ) : (
+
                     <div className="w-24 h-24 bg-gray-200 rounded-2xl flex items-center justify-center text-3xl">
                       🍛
                     </div>
+
                   )}
+
                 </div>
 
-                {/* बाकी UI SAME */}
+                {/* =================================================
+                    MENU INFO
+                ================================================= */}
+
                 <div className="flex-1">
-                  <h3 className="font-bold">{item.name}</h3>
-                  <p className="text-sm text-gray-500">{item.description}</p>
+
+                  <h3 className="font-bold">
+                    {item.name}
+                  </h3>
+
+                  <p className="text-sm text-gray-500">
+                    {item.description}
+                  </p>
 
                   <div className="flex justify-between mt-3">
-                    <p className="text-lg font-bold text-orange-500">₹{item.price}</p>
+
+                    <p className="text-lg font-bold text-orange-500">
+                      ₹{item.price}
+                    </p>
 
                     <Switch
                       checked={item.inStock}
-                      onCheckedChange={() => handleToggleStock(item)}
+                      onCheckedChange={() =>
+                        handleToggleStock(item)
+                      }
                     />
+
                   </div>
+
                 </div>
 
+                {/* =================================================
+                    MENU OPTIONS
+                ================================================= */}
+
                 <DropdownMenu>
+
                   <DropdownMenuTrigger asChild>
+
                     <button>
+
                       <MoreVertical className="w-5 h-5" />
+
                     </button>
+
                   </DropdownMenuTrigger>
+
                   <DropdownMenuContent>
-                    <DropdownMenuItem onClick={() => navigate(`/menu/edit/${item.id}`)}>
+
+                    <DropdownMenuItem
+                      onClick={() =>
+                        navigate(
+                          `/menu/edit/${item.id}`
+                        )
+                      }
+                    >
+
                       <Edit className="w-4 h-4 mr-2" />
+
                       Edit
+
                     </DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => handleDelete(item.id)}>
+
+                    <DropdownMenuItem
+                      onClick={() =>
+                        handleDelete(item.id)
+                      }
+                    >
+
                       <Trash2 className="w-4 h-4 mr-2" />
+
                       Delete
+
                     </DropdownMenuItem>
+
                   </DropdownMenuContent>
+
                 </DropdownMenu>
 
               </div>
+
             </div>
+
           ))}
+
         </div>
+
+        {/* =================================================
+            QUICK ACTIONS
+        ================================================= */}
+
         <div className="mt-6 bg-white rounded-3xl p-5 shadow-lg">
-          <h3 className="font-bold mb-4">Quick Actions</h3>
+
+          <h3 className="font-bold mb-4">
+            Quick Actions
+          </h3>
+
           <div className="grid grid-cols-2 gap-3">
-            <button onClick={handleBulkEdit} className="py-3 bg-gray-100 rounded-xl">
+
+            <button
+              onClick={handleBulkEdit}
+              className="py-3 bg-gray-100 rounded-xl"
+            >
               Bulk Edit
             </button>
-            <button onClick={handleMarkAllInStock} className="py-3 bg-green-100 rounded-xl">
+
+            <button
+              onClick={handleMarkAllInStock}
+              className="py-3 bg-green-100 rounded-xl"
+            >
               Mark All In Stock
             </button>
+
           </div>
+
         </div>
-        {/* Bulk Actions SAME */}
+
+        {/* =================================================
+            30-DAY MENU CYCLE
+        ================================================= */}
+
+        <div className="mt-6 bg-white rounded-3xl p-5 shadow-lg">
+
+          <div className="flex flex-col gap-4">
+
+            <div>
+
+              <h3 className="font-bold text-lg">
+                30-Day Menu Cycle
+              </h3>
+
+              <p className="text-sm text-gray-500 mt-1">
+                Plan which menu will be served each day.
+              </p>
+
+            </div>
+
+            <button
+              type="button"
+              onClick={() =>
+                navigate("/menu/cycle")
+              }
+              className="w-full py-3 bg-orange-500 text-white rounded-xl font-semibold shadow-md active:scale-[0.98]"
+            >
+              Manage 30-Day Cycle
+            </button>
+
+          </div>
+
+        </div>
+
       </div>
+
     </div>
   );
 }
