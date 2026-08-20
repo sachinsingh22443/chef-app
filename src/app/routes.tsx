@@ -14,6 +14,7 @@ import Dashboard from "./pages/Dashboard";
 import Orders from "./pages/orders/Orders";
 import OrderDetail from "./pages/orders/OrderDetail";
 import Menu from "./pages/menu/Menu";
+import MenuCycle from "./pages/menu/MenuCycle";
 import AddMenuItem from "./pages/menu/AddMenuItem";
 import EditMenuItem from "./pages/menu/EditMenuItem";
 import TomorrowSpecial from "./pages/TomorrowSpecial";
@@ -75,6 +76,7 @@ export const router = createBrowserRouter([
       { path: "orders/:orderId", element: <OrderDetail /> },
 
       { path: "menu", element: <Menu /> },
+      { path: "menu/cycle", element: <MenuCycle /> },
       { path: "menu/add", element: <AddMenuItem /> },
       { path: "menu/edit/:itemId", element: <EditMenuItem /> },
 
@@ -105,7 +107,13 @@ export const router = createBrowserRouter([
   { path: "/menu", element: <MainLayout />, children: [{ index: true, element: <Menu /> }] },
   { path: "/menu/add", element: <MainLayout />, children: [{ index: true, element: <AddMenuItem /> }] },
   { path: "/menu/edit/:itemId", element: <MainLayout />, children: [{ index: true, element: <EditMenuItem /> }] },
-
+   {
+  path: "/menu/cycle",
+  element: <MainLayout />,
+  children: [
+    { index: true, element: <MenuCycle /> }
+  ]
+},
   { path: "/orders", element: <MainLayout />, children: [{ index: true, element: <Orders /> }] },
   { path: "/profile", element: <MainLayout />, children: [{ index: true, element: <Profile /> }] },
   { path: "/profile/edit", element: <MainLayout />, children: [{ index: true, element: <EditProfile /> }] },
