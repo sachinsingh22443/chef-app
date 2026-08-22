@@ -38,8 +38,17 @@ type MenuItem = {
   food_type?: string;
 };
 
+type MealType = "breakfast" | "lunch" | "dinner";
+
+type DayMenus = {
+  breakfast?: string;
+  lunch?: string;
+  dinner?: string;
+};
+
 type CycleItem = {
   cycle_day: number;
+  meal_type: MealType;
   menu_id: string;
 };
 
@@ -48,6 +57,7 @@ type ExistingCycleItem = {
   chef_id?: string;
   menu_id: string;
   cycle_day: number;
+  meal_type: MealType;
   cycle_start_date?: string;
 };
 
@@ -58,6 +68,32 @@ type ExistingCycle = {
 };
 
 const TOTAL_DAYS = 30;
+const TOTAL_MEAL_ASSIGNMENTS = TOTAL_DAYS * 3;
+
+// =========================================================
+// MEAL CONFIG
+// =========================================================
+
+const MEAL_CONFIG: Record<
+  MealType,
+  {
+    label: string;
+    cutoff: string;
+  }
+> = {
+  breakfast: {
+    label: "Breakfast",
+    cutoff: "08:30 AM",
+  },
+  lunch: {
+    label: "Lunch",
+    cutoff: "11:00 AM",
+  },
+  dinner: {
+    label: "Dinner",
+    cutoff: "06:00 PM",
+  },
+};
 
 // =========================================================
 // DATE HELPERS
@@ -65,9 +101,11 @@ const TOTAL_DAYS = 30;
 
 function formatDate(date: Date) {
   const year = date.getFullYear();
+
   const month = String(
     date.getMonth() + 1
   ).padStart(2, "0");
+
   const day = String(
     date.getDate()
   ).padStart(2, "0");
@@ -132,7 +170,9 @@ export default function MenuCycle() {
     );
 
   const [selectedMenus, setSelectedMenus] =
-    useState<Record<number, string>>({});
+    useState<
+      Record<number, DayMenus>
+    >({});
 
   const [loadingMenus, setLoadingMenus] =
     useState(true);
@@ -194,45 +234,42 @@ export default function MenuCycle() {
   // =======================================================
 
   const fetchCycles = async () => {
-  try {
-    setLoadingCycles(true);
+    try {
+      setLoadingCycles(true);
 
-    const response = await API.get("/menu-cycle/");
+      const response =
+        await API.get("/menu-cycle/");
 
-    console.log("EXISTING CYCLES RESPONSE:", response.data);
+      console.log(
+        "EXISTING CYCLES RESPONSE:",
+        response.data
+      );
 
-    const data = response.data;
+      const data = response.data;
 
-    // Backend response:
-    // {
-    //   success: true,
-    //   cycles: [...]
-    // }
+      if (Array.isArray(data?.cycles)) {
+        setCycles(data.cycles);
+      } else if (Array.isArray(data)) {
+        setCycles(data);
+      } else if (
+        data &&
+        Array.isArray(data.items)
+      ) {
+        setCycles([data]);
+      } else {
+        setCycles([]);
+      }
+    } catch (err: any) {
+      console.error(
+        "FETCH CYCLES ERROR:",
+        err.response?.data || err
+      );
 
-    if (Array.isArray(data?.cycles)) {
-      setCycles(data.cycles);
-    } else if (Array.isArray(data)) {
-      setCycles(data);
-    } else if (
-      data &&
-      Array.isArray(data.items)
-    ) {
-      setCycles([data]);
-    } else {
       setCycles([]);
+    } finally {
+      setLoadingCycles(false);
     }
-
-  } catch (err: any) {
-    console.error(
-      "FETCH CYCLES ERROR:",
-      err.response?.data || err
-    );
-
-    setCycles([]);
-  } finally {
-    setLoadingCycles(false);
-  }
-};
+  };
 
   // =======================================================
   // INITIAL LOAD
@@ -264,11 +301,16 @@ export default function MenuCycle() {
 
   const handleMenuChange = (
     cycleDay: number,
+    mealType: MealType,
     menuId: string
   ) => {
     setSelectedMenus((previous) => ({
       ...previous,
-      [cycleDay]: menuId,
+
+      [cycleDay]: {
+        ...(previous[cycleDay] || {}),
+        [mealType]: menuId,
+      },
     }));
 
     setError("");
@@ -276,30 +318,35 @@ export default function MenuCycle() {
   };
 
   // =======================================================
-  // FILL ALL DAYS
+  // FILL ALL DAYS FOR ONE MEAL
   // =======================================================
 
   const handleFillAll = (
+    mealType: MealType,
     menuId: string
   ) => {
     if (!menuId) {
       return;
     }
 
-    const values: Record<
-      number,
-      string
-    > = {};
+    setSelectedMenus((previous) => {
+      const values = {
+        ...previous,
+      };
 
-    for (
-      let day = 1;
-      day <= TOTAL_DAYS;
-      day++
-    ) {
-      values[day] = menuId;
-    }
+      for (
+        let day = 1;
+        day <= TOTAL_DAYS;
+        day++
+      ) {
+        values[day] = {
+          ...(values[day] || {}),
+          [mealType]: menuId,
+        };
+      }
 
-    setSelectedMenus(values);
+      return values;
+    });
 
     setError("");
     setSuccess("");
@@ -320,19 +367,21 @@ export default function MenuCycle() {
   // =======================================================
 
   const selectedCount =
-    Object.keys(
-      selectedMenus
-    ).filter(
-      (day) =>
-        Boolean(
-          selectedMenus[
-            Number(day)
-          ]
-        )
-    ).length;
+    Object.values(selectedMenus).reduce(
+      (total, day) => {
+        return (
+          total +
+          (day.breakfast ? 1 : 0) +
+          (day.lunch ? 1 : 0) +
+          (day.dinner ? 1 : 0)
+        );
+      },
+      0
+    );
 
   const isComplete =
-    selectedCount === TOTAL_DAYS;
+    selectedCount ===
+    TOTAL_MEAL_ASSIGNMENTS;
 
   // =======================================================
   // SAVE 30 DAY CYCLE
@@ -355,25 +404,42 @@ export default function MenuCycle() {
     }
 
     // -----------------------------------------------------
-    // VALIDATE ALL DAYS
+    // VALIDATE ALL 30 DAYS × 3 MEALS
     // -----------------------------------------------------
 
-    const missingDays: number[] = [];
+    const missingMeals: string[] = [];
 
     for (
       let day = 1;
       day <= TOTAL_DAYS;
       day++
     ) {
-      if (!selectedMenus[day]) {
-        missingDays.push(day);
+      const dayMenus =
+        selectedMenus[day];
+
+      if (!dayMenus?.breakfast) {
+        missingMeals.push(
+          `Day ${day} Breakfast`
+        );
+      }
+
+      if (!dayMenus?.lunch) {
+        missingMeals.push(
+          `Day ${day} Lunch`
+        );
+      }
+
+      if (!dayMenus?.dinner) {
+        missingMeals.push(
+          `Day ${day} Dinner`
+        );
       }
     }
 
-    if (missingDays.length > 0) {
+    if (missingMeals.length > 0) {
       setError(
-        `Please select menus for all 30 days. Missing: Day ${missingDays.join(
-          ", Day "
+        `Please select all meals. Missing: ${missingMeals.join(
+          ", "
         )}`
       );
 
@@ -381,7 +447,7 @@ export default function MenuCycle() {
     }
 
     // -----------------------------------------------------
-    // BUILD ITEMS
+    // BUILD 90 ITEMS
     // -----------------------------------------------------
 
     const items: CycleItem[] = [];
@@ -391,28 +457,37 @@ export default function MenuCycle() {
       day <= TOTAL_DAYS;
       day++
     ) {
+      const dayMenus =
+        selectedMenus[day];
+
       items.push({
         cycle_day: day,
-        menu_id:
-          selectedMenus[day],
+        meal_type: "breakfast",
+        menu_id: dayMenus!.breakfast!,
+      });
+
+      items.push({
+        cycle_day: day,
+        meal_type: "lunch",
+        menu_id: dayMenus!.lunch!,
+      });
+
+      items.push({
+        cycle_day: day,
+        meal_type: "dinner",
+        menu_id: dayMenus!.dinner!,
       });
     }
 
-    // =====================================================
-    // IMPORTANT
-    // BACKEND SCHEMA:
-    //
-    // class MenuCycleBulkCreate:
-    //     cycle_start_date: date
-    //     items: list[MenuCycleItemCreate]
-    //
-    // =====================================================
+    // -----------------------------------------------------
+    // PAYLOAD
+    // -----------------------------------------------------
 
     const payload = {
       cycle_start_date:
         cycleStartDate,
 
-      items: items,
+      items,
     };
 
     console.log(
@@ -492,15 +567,19 @@ export default function MenuCycle() {
 
     const values: Record<
       number,
-      string
+      DayMenus
     > = {};
 
     for (
-      const item of
-      cycle.items || []
+      const item of cycle.items || []
     ) {
-      values[item.cycle_day] =
-        item.menu_id;
+      if (!values[item.cycle_day]) {
+        values[item.cycle_day] = {};
+      }
+
+      values[item.cycle_day][
+        item.meal_type
+      ] = item.menu_id;
     }
 
     setSelectedMenus(values);
@@ -529,6 +608,107 @@ export default function MenuCycle() {
       fetchMenus(),
       fetchCycles(),
     ]);
+  };
+
+  // =======================================================
+  // RENDER MEAL SELECT
+  // =======================================================
+
+  const renderMealSelect = (
+    day: number,
+    mealType: MealType,
+    dayMenus: DayMenus
+  ) => {
+    const config =
+      MEAL_CONFIG[mealType];
+
+    const selectedMenuId =
+      dayMenus[mealType];
+
+    const selectedMenu =
+      menuItems.find(
+        (menu) =>
+          menu.id === selectedMenuId
+      );
+
+    return (
+      <div className="bg-gray-50 rounded-2xl p-4">
+
+        <div className="flex items-center justify-between mb-2">
+          <label className="font-semibold text-gray-800">
+            {config.label}
+          </label>
+
+          <span className="text-xs text-orange-600 font-medium">
+            Cutoff {config.cutoff}
+          </span>
+        </div>
+
+        <select
+          value={selectedMenuId || ""}
+          onChange={(e) =>
+            handleMenuChange(
+              day,
+              mealType,
+              e.target.value
+            )
+          }
+          className="w-full border border-gray-200 rounded-xl px-4 py-3 bg-white outline-none focus:ring-2 focus:ring-orange-300"
+        >
+          <option value="">
+            Select {config.label}
+          </option>
+
+          {menuItems.map((menu) => (
+            <option
+              key={menu.id}
+              value={menu.id}
+            >
+              {menu.name} — ₹
+              {menu.price}
+            </option>
+          ))}
+        </select>
+
+        <p className="text-xs text-gray-500 mt-2">
+          Customers can order this meal
+          before {config.cutoff}.
+        </p>
+
+        {selectedMenu && (
+          <div className="flex items-center gap-3 mt-3">
+
+            {selectedMenu.image_urls?.[0] ? (
+              <img
+                src={
+                  selectedMenu.image_urls[0]
+                }
+                alt={
+                  selectedMenu.name
+                }
+                className="w-12 h-12 object-cover rounded-xl"
+              />
+            ) : (
+              <div className="w-12 h-12 bg-gray-200 rounded-xl flex items-center justify-center">
+                🍛
+              </div>
+            )}
+
+            <div>
+              <p className="font-semibold text-sm">
+                {selectedMenu.name}
+              </p>
+
+              <p className="text-xs text-gray-500">
+                ₹{selectedMenu.price}
+              </p>
+            </div>
+
+          </div>
+        )}
+
+      </div>
+    );
   };
 
   // =======================================================
@@ -563,7 +743,8 @@ export default function MenuCycle() {
             </h1>
 
             <p className="text-white/90 text-sm mt-1">
-              Plan your meals for 30 days
+              Plan breakfast, lunch and
+              dinner for 30 days
             </p>
 
           </div>
@@ -612,19 +793,23 @@ export default function MenuCycle() {
 
           {cycleEndDate && (
             <p className="text-sm text-gray-500 mt-3">
-              Cycle:
-              {" "}
+
+              Cycle:{" "}
+
               <span className="font-semibold text-gray-700">
                 {formatDisplayDate(
                   cycleStartDate
                 )}
               </span>
+
               {" → "}
+
               <span className="font-semibold text-gray-700">
                 {formatDisplayDate(
                   cycleEndDate
                 )}
               </span>
+
             </p>
           )}
 
@@ -638,9 +823,7 @@ export default function MenuCycle() {
 
       <div className="px-6 py-6 max-w-4xl mx-auto">
 
-        {/* =================================================
-            ERROR
-        ================================================= */}
+        {/* ERROR */}
 
         {error && (
           <div className="mb-5 bg-red-50 border border-red-200 text-red-700 rounded-2xl p-4">
@@ -648,9 +831,7 @@ export default function MenuCycle() {
           </div>
         )}
 
-        {/* =================================================
-            SUCCESS
-        ================================================= */}
+        {/* SUCCESS */}
 
         {success && (
           <div className="mb-5 bg-green-50 border border-green-200 text-green-700 rounded-2xl p-4 flex items-center gap-2">
@@ -673,7 +854,7 @@ export default function MenuCycle() {
           <div className="bg-white rounded-2xl p-4 shadow-md text-center">
 
             <p className="text-2xl font-bold">
-              30
+              {TOTAL_DAYS}
             </p>
 
             <p className="text-xs text-gray-500">
@@ -689,7 +870,7 @@ export default function MenuCycle() {
             </p>
 
             <p className="text-xs text-gray-500">
-              Assigned
+              Meals Assigned
             </p>
 
           </div>
@@ -697,12 +878,12 @@ export default function MenuCycle() {
           <div className="bg-white rounded-2xl p-4 shadow-md text-center">
 
             <p className="text-2xl font-bold text-orange-500">
-              {TOTAL_DAYS -
+              {TOTAL_MEAL_ASSIGNMENTS -
                 selectedCount}
             </p>
 
             <p className="text-xs text-gray-500">
-              Remaining
+              Meals Remaining
             </p>
 
           </div>
@@ -722,52 +903,154 @@ export default function MenuCycle() {
                 Quick Actions
               </h2>
 
-              <div className="flex flex-col sm:flex-row gap-3">
+              <div className="space-y-3">
 
-                <select
-                  defaultValue=""
-                  onChange={(e) => {
+                {/* BREAKFAST */}
 
-                    if (
-                      e.target.value
-                    ) {
+                <div className="flex flex-col sm:flex-row gap-2">
 
-                      handleFillAll(
-                        e.target.value
-                      );
+                  <div className="sm:w-28 flex items-center font-semibold text-orange-600">
+                    Breakfast
+                  </div>
 
-                      e.target.value =
-                        "";
-                    }
+                  <select
+                    defaultValue=""
+                    onChange={(e) => {
 
-                  }}
-                  className="flex-1 border border-gray-200 rounded-xl px-4 py-3 bg-white"
-                >
+                      if (e.target.value) {
 
-                  <option value="">
-                    Fill all 30 days with...
-                  </option>
+                        handleFillAll(
+                          "breakfast",
+                          e.target.value
+                        );
 
-                  {menuItems.map(
-                    (menu) => (
-                      <option
-                        key={menu.id}
-                        value={menu.id}
-                      >
-                        {menu.name} — ₹
-                        {menu.price}
-                      </option>
-                    )
-                  )}
+                        e.target.value = "";
+                      }
 
-                </select>
+                    }}
+                    className="flex-1 border border-gray-200 rounded-xl px-4 py-3 bg-white"
+                  >
+
+                    <option value="">
+                      Fill all Breakfast with...
+                    </option>
+
+                    {menuItems.map(
+                      (menu) => (
+                        <option
+                          key={menu.id}
+                          value={menu.id}
+                        >
+                          {menu.name} — ₹
+                          {menu.price}
+                        </option>
+                      )
+                    )}
+
+                  </select>
+
+                </div>
+
+                {/* LUNCH */}
+
+                <div className="flex flex-col sm:flex-row gap-2">
+
+                  <div className="sm:w-28 flex items-center font-semibold text-orange-600">
+                    Lunch
+                  </div>
+
+                  <select
+                    defaultValue=""
+                    onChange={(e) => {
+
+                      if (e.target.value) {
+
+                        handleFillAll(
+                          "lunch",
+                          e.target.value
+                        );
+
+                        e.target.value = "";
+                      }
+
+                    }}
+                    className="flex-1 border border-gray-200 rounded-xl px-4 py-3 bg-white"
+                  >
+
+                    <option value="">
+                      Fill all Lunch with...
+                    </option>
+
+                    {menuItems.map(
+                      (menu) => (
+                        <option
+                          key={menu.id}
+                          value={menu.id}
+                        >
+                          {menu.name} — ₹
+                          {menu.price}
+                        </option>
+                      )
+                    )}
+
+                  </select>
+
+                </div>
+
+                {/* DINNER */}
+
+                <div className="flex flex-col sm:flex-row gap-2">
+
+                  <div className="sm:w-28 flex items-center font-semibold text-orange-600">
+                    Dinner
+                  </div>
+
+                  <select
+                    defaultValue=""
+                    onChange={(e) => {
+
+                      if (e.target.value) {
+
+                        handleFillAll(
+                          "dinner",
+                          e.target.value
+                        );
+
+                        e.target.value = "";
+                      }
+
+                    }}
+                    className="flex-1 border border-gray-200 rounded-xl px-4 py-3 bg-white"
+                  >
+
+                    <option value="">
+                      Fill all Dinner with...
+                    </option>
+
+                    {menuItems.map(
+                      (menu) => (
+                        <option
+                          key={menu.id}
+                          value={menu.id}
+                        >
+                          {menu.name} — ₹
+                          {menu.price}
+                        </option>
+                      )
+                    )}
+
+                  </select>
+
+                </div>
+
+                {/* CLEAR */}
 
                 <button
                   type="button"
                   onClick={
                     handleClearAll
                   }
-                  className="px-5 py-3 bg-gray-100 rounded-xl font-medium"
+                  className="w-full py-3 bg-gray-100 rounded-xl font-medium"
                 >
                   Clear All
                 </button>
@@ -777,18 +1060,8 @@ export default function MenuCycle() {
             </div>
           )}
 
-
-        
-
-
         {/* =================================================
-    30-DAY MENU CYCLE
-================================================= */}
-
-
-
-        {/* =================================================
-            MENUS
+            30-DAY MENU CYCLE
         ================================================= */}
 
         {loadingMenus ? (
@@ -832,7 +1105,7 @@ export default function MenuCycle() {
 
         ) : (
 
-          <div className="space-y-3">
+          <div className="space-y-4">
 
             {Array.from(
               {
@@ -844,15 +1117,14 @@ export default function MenuCycle() {
                 const day =
                   index + 1;
 
-                const selectedMenuId =
-                  selectedMenus[day];
+                const dayMenus =
+                  selectedMenus[day] ||
+                  {};
 
-                const selectedMenu =
-                  menuItems.find(
-                    (menu) =>
-                      menu.id ===
-                      selectedMenuId
-                  );
+                const dayComplete =
+                  !!dayMenus.breakfast &&
+                  !!dayMenus.lunch &&
+                  !!dayMenus.dinner;
 
                 const targetDate =
                   cycleStartDate
@@ -863,151 +1135,102 @@ export default function MenuCycle() {
                     : "";
 
                 return (
+
                   <div
                     key={day}
-                    className={`bg-white rounded-3xl p-4 shadow-md border ${
-                      selectedMenu
+                    className={`bg-white rounded-3xl p-5 shadow-md border ${
+                      dayComplete
                         ? "border-green-200"
                         : "border-gray-100"
                     }`}
                   >
 
-                    <div className="flex flex-col sm:flex-row sm:items-center gap-4">
+                    {/* DAY HEADER */}
 
-                      {/* DAY */}
+                    <div className="flex items-center gap-3 mb-5">
 
-                      <div className="flex items-center gap-3 sm:w-48">
+                      <div
+                        className={`w-12 h-12 rounded-2xl flex items-center justify-center font-bold shrink-0 ${
+                          dayComplete
+                            ? "bg-green-100 text-green-700"
+                            : "bg-orange-100 text-orange-600"
+                        }`}
+                      >
 
-                        <div
-                          className={`w-12 h-12 rounded-2xl flex items-center justify-center font-bold shrink-0 ${
-                            selectedMenu
+                        {dayComplete ? (
+                          <Check className="w-5 h-5" />
+                        ) : (
+                          day
+                        )}
+
+                      </div>
+
+                      <div>
+
+                        <p className="font-bold text-lg">
+                          Day {day}
+                        </p>
+
+                        {targetDate && (
+                          <p className="text-xs text-gray-500">
+                            {formatDisplayDate(
+                              targetDate
+                            )}
+                          </p>
+                        )}
+
+                      </div>
+
+                      <div className="ml-auto">
+
+                        <span
+                          className={`text-xs px-3 py-1 rounded-full font-medium ${
+                            dayComplete
                               ? "bg-green-100 text-green-700"
                               : "bg-orange-100 text-orange-600"
                           }`}
                         >
-
-                          {selectedMenu ? (
-                            <Check className="w-5 h-5" />
-                          ) : (
-                            day
-                          )}
-
-                        </div>
-
-                        <div>
-
-                          <p className="font-bold">
-                            Day {day}
-                          </p>
-
-                          {targetDate && (
-                            <p className="text-xs text-gray-500">
-                              {formatDisplayDate(
-                                targetDate
-                              )}
-                            </p>
-                          )}
-
-                        </div>
-
-                      </div>
-
-                      {/* MENU SELECT */}
-
-                      <div className="flex-1">
-
-                        <select
-                          value={
-                            selectedMenuId ||
-                            ""
-                          }
-                          onChange={(e) =>
-                            handleMenuChange(
-                              day,
-                              e.target.value
-                            )
-                          }
-                          className="w-full border border-gray-200 rounded-2xl px-4 py-3 bg-white outline-none focus:ring-2 focus:ring-orange-300"
-                        >
-
-                          <option value="">
-                            Select menu for Day{" "}
-                            {day}
-                          </option>
-
-                          {menuItems.map(
-                            (menu) => (
-                              <option
-                                key={menu.id}
-                                value={menu.id}
-                              >
-                                {menu.name} — ₹
-                                {menu.price}
-                              </option>
-                            )
-                          )}
-
-                        </select>
-
-                        {/* SELECTED MENU */}
-
-                        {selectedMenu && (
-
-                          <div className="flex items-center gap-3 mt-3">
-
-                            {selectedMenu
-                              .image_urls?.[0] ? (
-
-                              <img
-                                src={
-                                  selectedMenu
-                                    .image_urls[0]
-                                }
-                                alt={
-                                  selectedMenu.name
-                                }
-                                className="w-12 h-12 object-cover rounded-xl"
-                              />
-
-                            ) : (
-
-                              <div className="w-12 h-12 bg-gray-100 rounded-xl flex items-center justify-center">
-                                🍛
-                              </div>
-
-                            )}
-
-                            <div>
-
-                              <p className="font-semibold text-sm">
-                                {
-                                  selectedMenu.name
-                                }
-                              </p>
-
-                              <p className="text-xs text-gray-500">
-                                ₹
-                                {
-                                  selectedMenu.price
-                                }
-                              </p>
-
-                            </div>
-
-                          </div>
-
-                        )}
+                          {dayComplete
+                            ? "Complete"
+                            : "Pending"}
+                        </span>
 
                       </div>
 
                     </div>
 
+                    {/* THREE MEALS */}
+
+                    <div className="space-y-4">
+
+                      {renderMealSelect(
+                        day,
+                        "breakfast",
+                        dayMenus
+                      )}
+
+                      {renderMealSelect(
+                        day,
+                        "lunch",
+                        dayMenus
+                      )}
+
+                      {renderMealSelect(
+                        day,
+                        "dinner",
+                        dayMenus
+                      )}
+
+                    </div>
+
                   </div>
+
                 );
               }
             )}
 
           </div>
+
         )}
 
         {/* =================================================
@@ -1045,9 +1268,9 @@ export default function MenuCycle() {
                   : isComplete
                   ? "Save 30 Day Cycle"
                   : `Select ${
-                      TOTAL_DAYS -
+                      TOTAL_MEAL_ASSIGNMENTS -
                       selectedCount
-                    } More Days`}
+                    } More Meals`}
 
               </button>
 
@@ -1139,11 +1362,7 @@ export default function MenuCycle() {
                           </p>
 
                           <p className="text-xs text-gray-400 mt-1">
-                            {
-                              cycle.items?.length ||
-                              0
-                            }{" "}
-                            days configured
+                            {cycle.items?.length || 0} meals configured
                           </p>
 
                         </div>
@@ -1169,6 +1388,7 @@ export default function MenuCycle() {
               )}
 
             </div>
+
           )}
 
         </div>
