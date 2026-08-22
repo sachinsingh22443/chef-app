@@ -7,6 +7,9 @@ import {
   Check,
   Save,
   RefreshCw,
+  Pencil,
+  Trash2,
+  X,
 } from "lucide-react";
 
 const API = axios.create({
@@ -63,12 +66,12 @@ type ExistingCycleItem = {
 
 type ExistingCycle = {
   cycle_start_date: string;
-  total_days?: number;
+  cycle_end_date?: string;
   items: ExistingCycleItem[];
 };
 
 const TOTAL_DAYS = 30;
-const TOTAL_MEAL_ASSIGNMENTS = TOTAL_DAYS * 3;
+const TOTAL_MEAL_ASSIGNMENTS = 90;
 
 // =========================================================
 // MEAL CONFIG
@@ -102,49 +105,31 @@ const MEAL_CONFIG: Record<
 function formatDate(date: Date) {
   const year = date.getFullYear();
 
-  const month = String(
-    date.getMonth() + 1
-  ).padStart(2, "0");
+  const month = String(date.getMonth() + 1).padStart(2, "0");
 
-  const day = String(
-    date.getDate()
-  ).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
 
   return `${year}-${month}-${day}`;
 }
 
-function addDays(
-  dateString: string,
-  days: number
-) {
-  const date = new Date(
-    `${dateString}T00:00:00`
-  );
+function addDays(dateString: string, days: number) {
+  const date = new Date(`${dateString}T00:00:00`);
 
-  date.setDate(
-    date.getDate() + days
-  );
+  date.setDate(date.getDate() + days);
 
   return formatDate(date);
 }
 
-function formatDisplayDate(
-  dateString: string
-) {
+function formatDisplayDate(dateString: string) {
   if (!dateString) return "";
 
-  const date = new Date(
-    `${dateString}T00:00:00`
-  );
+  const date = new Date(`${dateString}T00:00:00`);
 
-  return date.toLocaleDateString(
-    "en-IN",
-    {
-      day: "2-digit",
-      month: "short",
-      year: "numeric",
-    }
-  );
+  return date.toLocaleDateString("en-IN", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+  });
 }
 
 // =========================================================
@@ -158,36 +143,35 @@ export default function MenuCycle() {
   // STATE
   // =======================================================
 
-  const [menuItems, setMenuItems] =
-    useState<MenuItem[]>([]);
+  const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
 
-  const [cycles, setCycles] =
-    useState<ExistingCycle[]>([]);
+  const [cycles, setCycles] = useState<ExistingCycle[]>([]);
 
-  const [cycleStartDate, setCycleStartDate] =
-    useState<string>(
-      formatDate(new Date())
-    );
+  const [cycleStartDate, setCycleStartDate] = useState<string>(
+    formatDate(new Date())
+  );
 
-  const [selectedMenus, setSelectedMenus] =
-    useState<
-      Record<number, DayMenus>
-    >({});
+  const [selectedMenus, setSelectedMenus] = useState<
+    Record<number, DayMenus>
+  >({});
 
-  const [loadingMenus, setLoadingMenus] =
-    useState(true);
+  const [loadingMenus, setLoadingMenus] = useState(true);
 
-  const [loadingCycles, setLoadingCycles] =
-    useState(true);
+  const [loadingCycles, setLoadingCycles] = useState(true);
 
-  const [saving, setSaving] =
-    useState(false);
+  const [saving, setSaving] = useState(false);
 
-  const [error, setError] =
-    useState("");
+  const [deletingCycle, setDeletingCycle] = useState<string | null>(
+    null
+  );
 
-  const [success, setSuccess] =
-    useState("");
+  const [editingCycle, setEditingCycle] = useState<string | null>(
+    null
+  );
+
+  const [error, setError] = useState("");
+
+  const [success, setSuccess] = useState("");
 
   // =======================================================
   // FETCH MENUS
@@ -198,27 +182,19 @@ export default function MenuCycle() {
       setLoadingMenus(true);
       setError("");
 
-      const response =
-        await API.get("/menu/my");
+      const response = await API.get("/menu/my");
 
-      const menus = Array.isArray(
-        response.data
-      )
+      const menus = Array.isArray(response.data)
         ? response.data
         : [];
 
-      const activeMenus =
-        menus.filter(
-          (menu: MenuItem) =>
-            !menu.is_deleted
-        );
+      const activeMenus = menus.filter(
+        (menu: MenuItem) => !menu.is_deleted
+      );
 
       setMenuItems(activeMenus);
     } catch (err: any) {
-      console.error(
-        "FETCH MENUS ERROR:",
-        err
-      );
+      console.error("FETCH MENUS ERROR:", err);
 
       setError(
         err.response?.data?.detail ||
@@ -237,8 +213,7 @@ export default function MenuCycle() {
     try {
       setLoadingCycles(true);
 
-      const response =
-        await API.get("/menu-cycle/");
+      const response = await API.get("/menu-cycle/");
 
       console.log(
         "EXISTING CYCLES RESPONSE:",
@@ -251,11 +226,6 @@ export default function MenuCycle() {
         setCycles(data.cycles);
       } else if (Array.isArray(data)) {
         setCycles(data);
-      } else if (
-        data &&
-        Array.isArray(data.items)
-      ) {
-        setCycles([data]);
       } else {
         setCycles([]);
       }
@@ -281,7 +251,7 @@ export default function MenuCycle() {
   }, []);
 
   // =======================================================
-  // CYCLE END DATE
+  // END DATE
   // =======================================================
 
   const cycleEndDate = useMemo(() => {
@@ -300,15 +270,15 @@ export default function MenuCycle() {
   // =======================================================
 
   const handleMenuChange = (
-    cycleDay: number,
+    day: number,
     mealType: MealType,
     menuId: string
   ) => {
     setSelectedMenus((previous) => ({
       ...previous,
 
-      [cycleDay]: {
-        ...(previous[cycleDay] || {}),
+      [day]: {
+        ...(previous[day] || {}),
         [mealType]: menuId,
       },
     }));
@@ -318,34 +288,28 @@ export default function MenuCycle() {
   };
 
   // =======================================================
-  // FILL ALL DAYS FOR ONE MEAL
+  // FILL ALL DAYS
   // =======================================================
 
   const handleFillAll = (
     mealType: MealType,
     menuId: string
   ) => {
-    if (!menuId) {
-      return;
-    }
+    if (!menuId) return;
 
     setSelectedMenus((previous) => {
-      const values = {
+      const updated = {
         ...previous,
       };
 
-      for (
-        let day = 1;
-        day <= TOTAL_DAYS;
-        day++
-      ) {
-        values[day] = {
-          ...(values[day] || {}),
+      for (let day = 1; day <= TOTAL_DAYS; day++) {
+        updated[day] = {
+          ...(updated[day] || {}),
           [mealType]: menuId,
         };
       }
 
-      return values;
+      return updated;
     });
 
     setError("");
@@ -353,7 +317,7 @@ export default function MenuCycle() {
   };
 
   // =======================================================
-  // CLEAR ALL
+  // CLEAR
   // =======================================================
 
   const handleClearAll = () => {
@@ -363,150 +327,111 @@ export default function MenuCycle() {
   };
 
   // =======================================================
-  // SELECTED COUNT
+  // COUNT
   // =======================================================
 
-  const selectedCount =
-    Object.values(selectedMenus).reduce(
-      (total, day) => {
-        return (
-          total +
-          (day.breakfast ? 1 : 0) +
-          (day.lunch ? 1 : 0) +
-          (day.dinner ? 1 : 0)
-        );
-      },
-      0
+  const selectedCount = Object.values(
+    selectedMenus
+  ).reduce((total, day) => {
+    return (
+      total +
+      (day.breakfast ? 1 : 0) +
+      (day.lunch ? 1 : 0) +
+      (day.dinner ? 1 : 0)
     );
+  }, 0);
 
   const isComplete =
-    selectedCount ===
-    TOTAL_MEAL_ASSIGNMENTS;
+    selectedCount === TOTAL_MEAL_ASSIGNMENTS;
 
   // =======================================================
-  // SAVE 30 DAY CYCLE
+  // BUILD 90 ITEMS
+  // =======================================================
+
+  const buildCycleItems = (): CycleItem[] => {
+    const items: CycleItem[] = [];
+
+    for (let day = 1; day <= TOTAL_DAYS; day++) {
+      const dayMenus = selectedMenus[day];
+
+      if (dayMenus?.breakfast) {
+        items.push({
+          cycle_day: day,
+          meal_type: "breakfast",
+          menu_id: dayMenus.breakfast,
+        });
+      }
+
+      if (dayMenus?.lunch) {
+        items.push({
+          cycle_day: day,
+          meal_type: "lunch",
+          menu_id: dayMenus.lunch,
+        });
+      }
+
+      if (dayMenus?.dinner) {
+        items.push({
+          cycle_day: day,
+          meal_type: "dinner",
+          menu_id: dayMenus.dinner,
+        });
+      }
+    }
+
+    return items;
+  };
+
+  // =======================================================
+  // CREATE NEW CYCLE
   // =======================================================
 
   const handleSaveCycle = async () => {
     setError("");
     setSuccess("");
 
-    // -----------------------------------------------------
-    // DATE
-    // -----------------------------------------------------
-
     if (!cycleStartDate) {
       setError(
         "Please select a cycle start date."
       );
-
       return;
     }
 
-    // -----------------------------------------------------
-    // VALIDATE ALL 30 DAYS × 3 MEALS
-    // -----------------------------------------------------
-
-    const missingMeals: string[] = [];
-
-    for (
-      let day = 1;
-      day <= TOTAL_DAYS;
-      day++
-    ) {
-      const dayMenus =
-        selectedMenus[day];
-
-      if (!dayMenus?.breakfast) {
-        missingMeals.push(
-          `Day ${day} Breakfast`
-        );
-      }
-
-      if (!dayMenus?.lunch) {
-        missingMeals.push(
-          `Day ${day} Lunch`
-        );
-      }
-
-      if (!dayMenus?.dinner) {
-        missingMeals.push(
-          `Day ${day} Dinner`
-        );
-      }
-    }
-
-    if (missingMeals.length > 0) {
+    if (!isComplete) {
       setError(
-        `Please select all meals. Missing: ${missingMeals.join(
-          ", "
-        )}`
+        `Please select all 90 meals. ${
+          TOTAL_MEAL_ASSIGNMENTS - selectedCount
+        } meals are still missing.`
       );
-
       return;
     }
 
-    // -----------------------------------------------------
-    // BUILD 90 ITEMS
-    // -----------------------------------------------------
+    const items = buildCycleItems();
 
-    const items: CycleItem[] = [];
-
-    for (
-      let day = 1;
-      day <= TOTAL_DAYS;
-      day++
-    ) {
-      const dayMenus =
-        selectedMenus[day];
-
-      items.push({
-        cycle_day: day,
-        meal_type: "breakfast",
-        menu_id: dayMenus!.breakfast!,
-      });
-
-      items.push({
-        cycle_day: day,
-        meal_type: "lunch",
-        menu_id: dayMenus!.lunch!,
-      });
-
-      items.push({
-        cycle_day: day,
-        meal_type: "dinner",
-        menu_id: dayMenus!.dinner!,
-      });
+    if (items.length !== 90) {
+      setError(
+        "Exactly 90 menu entries are required."
+      );
+      return;
     }
-
-    // -----------------------------------------------------
-    // PAYLOAD
-    // -----------------------------------------------------
 
     const payload = {
-      cycle_start_date:
-        cycleStartDate,
-
+      cycle_start_date: cycleStartDate,
       items,
     };
 
     console.log(
-      "MENU CYCLE PAYLOAD:",
+      "CREATE CYCLE PAYLOAD:",
       payload
     );
-
-    // -----------------------------------------------------
-    // SAVE
-    // -----------------------------------------------------
 
     try {
       setSaving(true);
 
-      const response =
-        await API.post(
-          "/menu-cycle/",
-          payload
-        );
+      const response = await API.post(
+        "/menu-cycle/",
+        payload
+      );
 
       console.log(
         "CYCLE CREATED:",
@@ -517,8 +442,9 @@ export default function MenuCycle() {
         "30-day menu cycle created successfully."
       );
 
-      await fetchCycles();
+      setSelectedMenus({});
 
+      await fetchCycles();
     } catch (err: any) {
       console.error(
         "CREATE CYCLE ERROR:",
@@ -528,9 +454,7 @@ export default function MenuCycle() {
       const detail =
         err.response?.data?.detail;
 
-      if (
-        Array.isArray(detail)
-      ) {
+      if (Array.isArray(detail)) {
         setError(
           detail
             .map(
@@ -561,39 +485,261 @@ export default function MenuCycle() {
   const handleLoadCycle = (
     cycle: ExistingCycle
   ) => {
-    setCycleStartDate(
-      cycle.cycle_start_date
-    );
-
     const values: Record<
       number,
       DayMenus
     > = {};
 
-    for (
-      const item of cycle.items || []
-    ) {
+    for (const item of cycle.items || []) {
       if (!values[item.cycle_day]) {
         values[item.cycle_day] = {};
       }
 
-      values[item.cycle_day][
+      const mealType =
         item.meal_type
-      ] = item.menu_id;
+          ?.toLower()
+          .trim();
+
+      if (
+        mealType === "breakfast" ||
+        mealType === "lunch" ||
+        mealType === "dinner"
+      ) {
+        values[item.cycle_day][
+          mealType
+        ] = item.menu_id;
+      }
     }
 
+    setCycleStartDate(
+      cycle.cycle_start_date
+    );
+
     setSelectedMenus(values);
+
+    setEditingCycle(
+      cycle.cycle_start_date
+    );
 
     setError("");
 
     setSuccess(
-      "Existing cycle loaded."
+      "Existing cycle loaded. Make your changes and click Update Cycle."
     );
 
     window.scrollTo({
       top: 0,
       behavior: "smooth",
     });
+  };
+
+  // =======================================================
+  // CANCEL EDIT
+  // =======================================================
+
+  const handleCancelEdit = () => {
+    setEditingCycle(null);
+
+    setSelectedMenus({});
+
+    setCycleStartDate(
+      formatDate(new Date())
+    );
+
+    setError("");
+
+    setSuccess(
+      "Edit cancelled."
+    );
+  };
+
+  // =======================================================
+  // UPDATE EXISTING CYCLE
+  // =======================================================
+
+  const handleUpdateCycle = async () => {
+    if (!editingCycle) {
+      setError(
+        "No cycle selected for update."
+      );
+      return;
+    }
+
+    setError("");
+    setSuccess("");
+
+    if (!isComplete) {
+      setError(
+        `Please select all 90 meals. ${
+          TOTAL_MEAL_ASSIGNMENTS - selectedCount
+        } meals are still missing.`
+      );
+      return;
+    }
+
+    /*
+     * IMPORTANT:
+     *
+     * Backend requires:
+     *
+     * URL:
+     * /menu-cycle/cycle/{cycle_start_date}
+     *
+     * Body:
+     * {
+     *   cycle_start_date: SAME DATE,
+     *   items: 90 entries
+     * }
+     *
+     * We DO NOT send new_cycle_start_date.
+     */
+
+    const payload = {
+      cycle_start_date: editingCycle,
+      items: buildCycleItems(),
+    };
+
+    console.log(
+      "UPDATE CYCLE PAYLOAD:",
+      payload
+    );
+
+    try {
+      setSaving(true);
+
+      const response = await API.put(
+        `/menu-cycle/cycle/${encodeURIComponent(
+          editingCycle
+        )}`,
+        payload
+      );
+
+      console.log(
+        "CYCLE UPDATED:",
+        response.data
+      );
+
+      setSuccess(
+        "Menu cycle updated successfully."
+      );
+
+      setEditingCycle(null);
+
+      setSelectedMenus({});
+
+      await fetchCycles();
+    } catch (err: any) {
+      console.error(
+        "UPDATE CYCLE ERROR:",
+        err
+      );
+
+      const detail =
+        err.response?.data?.detail;
+
+      if (Array.isArray(detail)) {
+        setError(
+          detail
+            .map(
+              (item: any) =>
+                item.msg ||
+                "Validation error"
+            )
+            .join(", ")
+        );
+      } else if (
+        typeof detail === "string"
+      ) {
+        setError(detail);
+      } else {
+        setError(
+          "Unable to update menu cycle."
+        );
+      }
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  // =======================================================
+  // DELETE EXISTING CYCLE
+  // =======================================================
+
+  const handleDeleteCycle = async (
+    cycle: ExistingCycle
+  ) => {
+    const startDate =
+      cycle.cycle_start_date;
+
+    const confirmed =
+      window.confirm(
+        `Delete the menu cycle starting ${formatDisplayDate(
+          startDate
+        )}?\n\nOnly the menu cycle configuration will be deleted. Menus, orders and carts are not deleted.`
+      );
+
+    if (!confirmed) {
+      return;
+    }
+
+    try {
+      setDeletingCycle(startDate);
+
+      setError("");
+      setSuccess("");
+
+      /*
+       * ACTUAL BACKEND ROUTE:
+       *
+       * DELETE
+       * /menu-cycle/cycle/{cycle_start_date}
+       */
+
+      const response =
+        await API.delete(
+          `/menu-cycle/cycle/${encodeURIComponent(
+            startDate
+          )}`
+        );
+
+      console.log(
+        "CYCLE DELETED:",
+        response.data
+      );
+
+      if (
+        editingCycle === startDate
+      ) {
+        setEditingCycle(null);
+        setSelectedMenus({});
+      }
+
+      setSuccess(
+        "Menu cycle deleted successfully."
+      );
+
+      await fetchCycles();
+    } catch (err: any) {
+      console.error(
+        "DELETE CYCLE ERROR:",
+        err
+      );
+
+      const detail =
+        err.response?.data?.detail;
+
+      if (
+        typeof detail === "string"
+      ) {
+        setError(detail);
+      } else {
+        setError(
+          "Unable to delete menu cycle."
+        );
+      }
+    } finally {
+      setDeletingCycle(null);
+    }
   };
 
   // =======================================================
@@ -628,13 +774,15 @@ export default function MenuCycle() {
     const selectedMenu =
       menuItems.find(
         (menu) =>
-          menu.id === selectedMenuId
+          menu.id ===
+          selectedMenuId
       );
 
     return (
       <div className="bg-gray-50 rounded-2xl p-4">
 
         <div className="flex items-center justify-between mb-2">
+
           <label className="font-semibold text-gray-800">
             {config.label}
           </label>
@@ -642,10 +790,13 @@ export default function MenuCycle() {
           <span className="text-xs text-orange-600 font-medium">
             Cutoff {config.cutoff}
           </span>
+
         </div>
 
         <select
-          value={selectedMenuId || ""}
+          value={
+            selectedMenuId || ""
+          }
           onChange={(e) =>
             handleMenuChange(
               day,
@@ -655,33 +806,39 @@ export default function MenuCycle() {
           }
           className="w-full border border-gray-200 rounded-xl px-4 py-3 bg-white outline-none focus:ring-2 focus:ring-orange-300"
         >
+
           <option value="">
             Select {config.label}
           </option>
 
-          {menuItems.map((menu) => (
-            <option
-              key={menu.id}
-              value={menu.id}
-            >
-              {menu.name} — ₹
-              {menu.price}
-            </option>
-          ))}
+          {menuItems.map(
+            (menu) => (
+              <option
+                key={menu.id}
+                value={menu.id}
+              >
+                {menu.name} — ₹
+                {menu.price}
+              </option>
+            )
+          )}
+
         </select>
 
         <p className="text-xs text-gray-500 mt-2">
-          Customers can order this meal
-          before {config.cutoff}.
+          Customers can order this meal before{" "}
+          {config.cutoff}.
         </p>
 
         {selectedMenu && (
           <div className="flex items-center gap-3 mt-3">
 
-            {selectedMenu.image_urls?.[0] ? (
+            {selectedMenu
+              .image_urls?.[0] ? (
               <img
                 src={
-                  selectedMenu.image_urls[0]
+                  selectedMenu
+                    .image_urls[0]
                 }
                 alt={
                   selectedMenu.name
@@ -695,13 +852,18 @@ export default function MenuCycle() {
             )}
 
             <div>
+
               <p className="font-semibold text-sm">
                 {selectedMenu.name}
               </p>
 
               <p className="text-xs text-gray-500">
-                ₹{selectedMenu.price}
+                ₹
+                {
+                  selectedMenu.price
+                }
               </p>
+
             </div>
 
           </div>
@@ -711,9 +873,9 @@ export default function MenuCycle() {
     );
   };
 
-  // =======================================================
+  // =========================================================
   // UI
-  // =======================================================
+  // =========================================================
 
   return (
     <div className="min-h-screen bg-gray-50 pb-10">
@@ -743,8 +905,7 @@ export default function MenuCycle() {
             </h1>
 
             <p className="text-white/90 text-sm mt-1">
-              Plan breakfast, lunch and
-              dinner for 30 days
+              Plan breakfast, lunch and dinner for 30 days
             </p>
 
           </div>
@@ -760,6 +921,47 @@ export default function MenuCycle() {
           </button>
 
         </div>
+
+        {/* =================================================
+            EDIT MODE
+        ================================================= */}
+
+        {editingCycle && (
+          <div className="mb-5 bg-yellow-50 border border-yellow-200 rounded-2xl p-4">
+
+            <div className="flex items-center gap-3">
+
+              <Pencil className="w-5 h-5 text-yellow-600 shrink-0" />
+
+              <div className="flex-1">
+
+                <p className="font-bold text-yellow-800">
+                  Editing Existing Cycle
+                </p>
+
+                <p className="text-sm text-yellow-700 mt-1">
+                  Started{" "}
+                  {formatDisplayDate(
+                    editingCycle
+                  )}
+                </p>
+
+              </div>
+
+              <button
+                type="button"
+                onClick={
+                  handleCancelEdit
+                }
+                className="w-9 h-9 bg-white rounded-xl flex items-center justify-center"
+              >
+                <X className="w-4 h-4 text-gray-600" />
+              </button>
+
+            </div>
+
+          </div>
+        )}
 
         {/* =================================================
             START DATE
@@ -788,7 +990,8 @@ export default function MenuCycle() {
               setError("");
               setSuccess("");
             }}
-            className="w-full border border-gray-200 rounded-2xl px-4 py-3 outline-none focus:ring-2 focus:ring-orange-300"
+            disabled={!!editingCycle}
+            className="w-full border border-gray-200 rounded-2xl px-4 py-3 outline-none focus:ring-2 focus:ring-orange-300 disabled:bg-gray-100 disabled:text-gray-500"
           />
 
           {cycleEndDate && (
@@ -896,7 +1099,6 @@ export default function MenuCycle() {
 
         {!loadingMenus &&
           menuItems.length > 0 && (
-
             <div className="bg-white rounded-3xl p-5 shadow-lg mb-6">
 
               <h2 className="font-bold text-lg mb-4">
@@ -916,17 +1118,17 @@ export default function MenuCycle() {
                   <select
                     defaultValue=""
                     onChange={(e) => {
-
-                      if (e.target.value) {
-
+                      if (
+                        e.target.value
+                      ) {
                         handleFillAll(
                           "breakfast",
                           e.target.value
                         );
 
-                        e.target.value = "";
+                        e.target.value =
+                          "";
                       }
-
                     }}
                     className="flex-1 border border-gray-200 rounded-xl px-4 py-3 bg-white"
                   >
@@ -938,11 +1140,20 @@ export default function MenuCycle() {
                     {menuItems.map(
                       (menu) => (
                         <option
-                          key={menu.id}
-                          value={menu.id}
+                          key={
+                            menu.id
+                          }
+                          value={
+                            menu.id
+                          }
                         >
-                          {menu.name} — ₹
-                          {menu.price}
+                          {
+                            menu.name
+                          }{" "}
+                          — ₹
+                          {
+                            menu.price
+                          }
                         </option>
                       )
                     )}
@@ -962,17 +1173,17 @@ export default function MenuCycle() {
                   <select
                     defaultValue=""
                     onChange={(e) => {
-
-                      if (e.target.value) {
-
+                      if (
+                        e.target.value
+                      ) {
                         handleFillAll(
                           "lunch",
                           e.target.value
                         );
 
-                        e.target.value = "";
+                        e.target.value =
+                          "";
                       }
-
                     }}
                     className="flex-1 border border-gray-200 rounded-xl px-4 py-3 bg-white"
                   >
@@ -984,11 +1195,20 @@ export default function MenuCycle() {
                     {menuItems.map(
                       (menu) => (
                         <option
-                          key={menu.id}
-                          value={menu.id}
+                          key={
+                            menu.id
+                          }
+                          value={
+                            menu.id
+                          }
                         >
-                          {menu.name} — ₹
-                          {menu.price}
+                          {
+                            menu.name
+                          }{" "}
+                          — ₹
+                          {
+                            menu.price
+                          }
                         </option>
                       )
                     )}
@@ -1008,17 +1228,17 @@ export default function MenuCycle() {
                   <select
                     defaultValue=""
                     onChange={(e) => {
-
-                      if (e.target.value) {
-
+                      if (
+                        e.target.value
+                      ) {
                         handleFillAll(
                           "dinner",
                           e.target.value
                         );
 
-                        e.target.value = "";
+                        e.target.value =
+                          "";
                       }
-
                     }}
                     className="flex-1 border border-gray-200 rounded-xl px-4 py-3 bg-white"
                   >
@@ -1030,11 +1250,20 @@ export default function MenuCycle() {
                     {menuItems.map(
                       (menu) => (
                         <option
-                          key={menu.id}
-                          value={menu.id}
+                          key={
+                            menu.id
+                          }
+                          value={
+                            menu.id
+                          }
                         >
-                          {menu.name} — ₹
-                          {menu.price}
+                          {
+                            menu.name
+                          }{" "}
+                          — ₹
+                          {
+                            menu.price
+                          }
                         </option>
                       )
                     )}
@@ -1042,8 +1271,6 @@ export default function MenuCycle() {
                   </select>
 
                 </div>
-
-                {/* CLEAR */}
 
                 <button
                   type="button"
@@ -1061,11 +1288,10 @@ export default function MenuCycle() {
           )}
 
         {/* =================================================
-            30-DAY MENU CYCLE
+            MENU DAYS
         ================================================= */}
 
         {loadingMenus ? (
-
           <div className="bg-white rounded-3xl p-8 shadow-lg text-center">
 
             <p className="text-gray-500">
@@ -1073,9 +1299,7 @@ export default function MenuCycle() {
             </p>
 
           </div>
-
         ) : menuItems.length === 0 ? (
-
           <div className="bg-white rounded-3xl p-8 shadow-lg text-center">
 
             <div className="text-5xl mb-4">
@@ -1087,8 +1311,7 @@ export default function MenuCycle() {
             </h2>
 
             <p className="text-gray-500 mb-5">
-              Create at least one menu item
-              before creating a cycle.
+              Create at least one menu item before creating a cycle.
             </p>
 
             <button
@@ -1102,9 +1325,7 @@ export default function MenuCycle() {
             </button>
 
           </div>
-
         ) : (
-
           <div className="space-y-4">
 
             {Array.from(
@@ -1113,13 +1334,13 @@ export default function MenuCycle() {
                   TOTAL_DAYS,
               },
               (_, index) => {
-
                 const day =
                   index + 1;
 
                 const dayMenus =
-                  selectedMenus[day] ||
-                  {};
+                  selectedMenus[
+                    day
+                  ] || {};
 
                 const dayComplete =
                   !!dayMenus.breakfast &&
@@ -1135,7 +1356,6 @@ export default function MenuCycle() {
                     : "";
 
                 return (
-
                   <div
                     key={day}
                     className={`bg-white rounded-3xl p-5 shadow-md border ${
@@ -1156,13 +1376,11 @@ export default function MenuCycle() {
                             : "bg-orange-100 text-orange-600"
                         }`}
                       >
-
                         {dayComplete ? (
                           <Check className="w-5 h-5" />
                         ) : (
                           day
                         )}
-
                       </div>
 
                       <div>
@@ -1199,7 +1417,7 @@ export default function MenuCycle() {
 
                     </div>
 
-                    {/* THREE MEALS */}
+                    {/* MEALS */}
 
                     <div className="space-y-4">
 
@@ -1224,55 +1442,69 @@ export default function MenuCycle() {
                     </div>
 
                   </div>
-
                 );
               }
             )}
 
           </div>
-
         )}
 
         {/* =================================================
-            SAVE BUTTON
+            SAVE / UPDATE
         ================================================= */}
 
         {!loadingMenus &&
           menuItems.length > 0 && (
 
-            <div className="mt-6">
+            <div className="mt-6 space-y-3">
 
               <button
                 type="button"
                 onClick={
-                  handleSaveCycle
+                  editingCycle
+                    ? handleUpdateCycle
+                    : handleSaveCycle
                 }
                 disabled={
                   saving ||
-                  loadingMenus ||
                   !isComplete
                 }
                 className={`w-full py-4 rounded-2xl font-bold flex items-center justify-center gap-2 shadow-lg ${
                   saving ||
-                  loadingMenus ||
                   !isComplete
                     ? "bg-gray-200 text-gray-500 cursor-not-allowed"
                     : "bg-orange-500 text-white active:scale-[0.99]"
                 }`}
               >
 
-                <Save className="w-5 h-5" />
+                {editingCycle ? (
+                  <Pencil className="w-5 h-5" />
+                ) : (
+                  <Save className="w-5 h-5" />
+                )}
 
                 {saving
-                  ? "Saving Cycle..."
-                  : isComplete
-                  ? "Save 30 Day Cycle"
-                  : `Select ${
-                      TOTAL_MEAL_ASSIGNMENTS -
-                      selectedCount
-                    } More Meals`}
+                  ? editingCycle
+                    ? "Updating Cycle..."
+                    : "Saving Cycle..."
+                  : editingCycle
+                  ? "Update Cycle"
+                  : "Save 30 Day Cycle"}
 
               </button>
+
+              {editingCycle && (
+                <button
+                  type="button"
+                  onClick={
+                    handleCancelEdit
+                  }
+                  disabled={saving}
+                  className="w-full py-3 rounded-2xl font-semibold bg-gray-100 text-gray-700"
+                >
+                  Cancel Edit
+                </button>
+              )}
 
             </div>
           )}
@@ -1302,7 +1534,6 @@ export default function MenuCycle() {
           </div>
 
           {loadingCycles ? (
-
             <div className="bg-white rounded-3xl p-6 shadow-md">
 
               <p className="text-gray-500">
@@ -1310,9 +1541,7 @@ export default function MenuCycle() {
               </p>
 
             </div>
-
           ) : cycles.length === 0 ? (
-
             <div className="bg-white rounded-3xl p-6 shadow-md">
 
               <p className="text-gray-500">
@@ -1320,9 +1549,7 @@ export default function MenuCycle() {
               </p>
 
             </div>
-
           ) : (
-
             <div className="space-y-3">
 
               {cycles.map(
@@ -1332,27 +1559,51 @@ export default function MenuCycle() {
                 ) => {
 
                   const endDate =
+                    cycle.cycle_end_date ||
                     addDays(
                       cycle.cycle_start_date,
                       TOTAL_DAYS - 1
                     );
 
-                  return (
+                  const isEditing =
+                    editingCycle ===
+                    cycle.cycle_start_date;
 
+                  const isDeleting =
+                    deletingCycle ===
+                    cycle.cycle_start_date;
+
+                  return (
                     <div
                       key={`${cycle.cycle_start_date}-${index}`}
-                      className="bg-white rounded-3xl p-5 shadow-md"
+                      className={`bg-white rounded-3xl p-5 shadow-md border ${
+                        isEditing
+                          ? "border-orange-300"
+                          : "border-gray-100"
+                      }`}
                     >
 
-                      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                      <div className="flex flex-col gap-4">
+
+                        {/* INFO */}
 
                         <div>
 
-                          <p className="font-bold">
-                            {formatDisplayDate(
-                              cycle.cycle_start_date
+                          <div className="flex items-center gap-2">
+
+                            <p className="font-bold">
+                              {formatDisplayDate(
+                                cycle.cycle_start_date
+                              )}
+                            </p>
+
+                            {isEditing && (
+                              <span className="text-xs bg-orange-100 text-orange-600 px-2 py-1 rounded-full font-semibold">
+                                Editing
+                              </span>
                             )}
-                          </p>
+
+                          </div>
 
                           <p className="text-sm text-gray-500">
                             Ends{" "}
@@ -1367,34 +1618,74 @@ export default function MenuCycle() {
 
                         </div>
 
-                        <button
-                          type="button"
-                          onClick={() =>
-                            handleLoadCycle(
-                              cycle
-                            )
-                          }
-                          className="px-4 py-2 bg-orange-100 text-orange-600 rounded-xl font-semibold"
-                        >
-                          Load Cycle
-                        </button>
+                        {/* ACTIONS */}
+
+                        <div className="flex gap-2">
+
+                          <button
+                            type="button"
+                            onClick={() =>
+                              handleLoadCycle(
+                                cycle
+                              )
+                            }
+                            disabled={
+                              saving ||
+                              isDeleting
+                            }
+                            className="flex-1 px-4 py-3 bg-orange-100 text-orange-600 rounded-xl font-semibold flex items-center justify-center gap-2 disabled:opacity-50"
+                          >
+
+                            <Pencil className="w-4 h-4" />
+
+                            {isEditing
+                              ? "Editing"
+                              : "Edit Cycle"}
+
+                          </button>
+
+                          <button
+                            type="button"
+                            onClick={() =>
+                              handleDeleteCycle(
+                                cycle
+                              )
+                            }
+                            disabled={
+                              saving ||
+                              isDeleting
+                            }
+                            className="px-4 py-3 bg-red-50 text-red-600 rounded-xl font-semibold flex items-center justify-center gap-2 disabled:opacity-50"
+                          >
+
+                            {isDeleting ? (
+                              <span className="text-sm">
+                                Deleting...
+                              </span>
+                            ) : (
+                              <>
+                                <Trash2 className="w-4 h-4" />
+                                Delete
+                              </>
+                            )}
+
+                          </button>
+
+                        </div>
 
                       </div>
 
                     </div>
-
                   );
                 }
               )}
 
             </div>
-
           )}
 
         </div>
 
       </div>
-
     </div>
   );
 }
