@@ -590,7 +590,7 @@ export default function SubscriptionPlanMenuCycle() {
   // =========================================================
 
   return (
-    <div className="min-h-screen bg-gray-50 pb-52">
+    <div className="min-h-screen bg-gray-50 pb-32">
 
       {/* =====================================================
           HEADER
@@ -649,59 +649,11 @@ export default function SubscriptionPlanMenuCycle() {
       </div>
 
       {/* =====================================================
-          INFO
-      ===================================================== */}
-
-      <div className="p-5">
-
-        <div className="bg-blue-50 border border-blue-100 rounded-2xl p-4">
-
-          <p className="text-sm text-blue-800 font-semibold">
-            Existing Menu Only
-          </p>
-
-          <p className="text-xs text-blue-600 mt-1">
-            Breakfast, Lunch and Dinner must be
-            mapped for all 30 days using your
-            existing menus. Customers can decide
-            later whether they want the Breakfast
-            subscription. No new menu will be
-            created.
-          </p>
-
-        </div>
-
-      </div>
-
-      {/* =====================================================
-          BREAKFAST INFO
-      ===================================================== */}
-
-      {plan.breakfast_available && (
-        <div className="mx-5 mb-4 bg-orange-50 border border-orange-100 rounded-2xl p-4">
-
-          <p className="text-sm text-orange-800 font-semibold">
-            🍳 Breakfast Menu Required
-          </p>
-
-          <p className="text-xs text-orange-600 mt-1">
-            Breakfast must be configured for all
-            30 days. Customers can later choose
-            whether they want the Breakfast
-            subscription.
-            {plan.breakfast_price != null &&
-              ` Customer Breakfast price: ₹${plan.breakfast_price}/day.`}
-          </p>
-
-        </div>
-      )}
-
-      {/* =====================================================
           ERROR
       ===================================================== */}
 
       {error && (
-        <div className="mx-5 mb-4 bg-red-50 border border-red-200 rounded-2xl p-4">
+        <div className="mx-5 mt-5 bg-red-50 border border-red-200 rounded-2xl p-4">
 
           <p className="text-sm text-red-700 font-medium">
             {error}
@@ -715,7 +667,7 @@ export default function SubscriptionPlanMenuCycle() {
       ===================================================== */}
 
       {success && (
-        <div className="mx-5 mb-4 bg-green-50 border border-green-200 rounded-2xl p-4">
+        <div className="mx-5 mt-5 bg-green-50 border border-green-200 rounded-2xl p-4">
 
           <p className="text-sm text-green-700 font-medium">
             {success}
@@ -728,7 +680,7 @@ export default function SubscriptionPlanMenuCycle() {
           DAYS
       ===================================================== */}
 
-      <div className="px-5 space-y-4">
+      <div className="px-5 pt-5 space-y-4">
 
         {DAYS.map((day) => {
 
@@ -958,15 +910,15 @@ export default function SubscriptionPlanMenuCycle() {
 
       {/* =====================================================
           SAVE BUTTON
-          IMPORTANT:
-          bottom-[80px] keeps it above mobile navigation.
+          NOT FIXED - WILL NOT HIDE BEHIND BOTTOM NAV
       ===================================================== */}
 
-      <div className="fixed bottom-[80px] left-0 right-0 z-50 bg-white/95 backdrop-blur-md border-t border-gray-200 p-4 shadow-2xl">
+      <div className="px-5 pt-6 pb-32">
 
-        <div className="max-w-[600px] mx-auto">
+        <div className="max-w-[600px] mx-auto bg-white rounded-3xl p-4 shadow-lg border border-gray-100">
 
           <button
+            type="button"
             onClick={handleSave}
             disabled={
               saving ||
@@ -1004,13 +956,6 @@ export default function SubscriptionPlanMenuCycle() {
             )}
 
           </button>
-
-          {!validation.isValid && (
-            <p className="text-center text-xs text-gray-500 mt-2">
-              Breakfast, lunch and dinner must be
-              selected for all 30 days.
-            </p>
-          )}
 
           {validation.isValid && (
             <p className="text-center text-xs text-green-600 font-medium mt-2">
