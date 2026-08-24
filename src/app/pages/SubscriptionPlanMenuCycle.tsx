@@ -43,6 +43,8 @@ const DAYS = Array.from(
   (_, index) => index + 1
 );
 
+const REQUIRED_MEAL_COUNT = 90;
+
 export default function SubscriptionPlanMenuCycle() {
   const navigate = useNavigate();
 
@@ -101,7 +103,9 @@ export default function SubscriptionPlanMenuCycle() {
 
   useEffect(() => {
     if (!planId) {
-      setError("Subscription plan ID is missing.");
+      setError(
+        "Subscription plan ID is missing."
+      );
       setLoading(false);
       return;
     }
@@ -120,7 +124,7 @@ export default function SubscriptionPlanMenuCycle() {
       const headers = getAuthHeaders();
 
       // =====================================================
-      // 1. LOAD SUBSCRIPTION PLANS
+      // 1. LOAD SUBSCRIPTION PLAN
       // =====================================================
 
       const planResponse = await axios.get(
@@ -130,7 +134,9 @@ export default function SubscriptionPlanMenuCycle() {
         }
       );
 
-      const plans = Array.isArray(planResponse.data)
+      const plans = Array.isArray(
+        planResponse.data
+      )
         ? planResponse.data
         : [];
 
@@ -158,15 +164,20 @@ export default function SubscriptionPlanMenuCycle() {
         }
       );
 
-      const menuData = Array.isArray(menuResponse.data)
+      const menuData = Array.isArray(
+        menuResponse.data
+      )
         ? menuResponse.data
-        : Array.isArray(menuResponse.data?.menus)
+        : Array.isArray(
+            menuResponse.data?.menus
+          )
         ? menuResponse.data.menus
         : [];
 
       const validMenus = menuData.filter(
         (menu: Menu) =>
-          menu.is_deleted !== true
+          menu.is_deleted !== true &&
+          menu.is_available !== false
       );
 
       setMenus(validMenus);
@@ -198,7 +209,10 @@ export default function SubscriptionPlanMenuCycle() {
           if (
             item.day_number >= 1 &&
             item.day_number <= 30 &&
-            MEAL_TYPES.includes(item.meal_type)
+            MEAL_TYPES.includes(
+              item.meal_type
+            ) &&
+            item.menu_id
           ) {
             mappingState[
               getMappingKey(
@@ -281,24 +295,52 @@ export default function SubscriptionPlanMenuCycle() {
   // =========================================================
   // VALIDATION
   //
-  // Lunch + Dinner REQUIRED
-  // Breakfast OPTIONAL
+  // CHEF SIDE:
+  //
+  // Breakfast = REQUIRED
+  // Lunch     = REQUIRED
+  // Dinner    = REQUIRED
+  //
+  // 30 × 3 = 90
+  //
+  // CUSTOMER SIDE:
+  //
+  // Breakfast remains optional.
   // =========================================================
 
   const validation = useMemo(() => {
+    const missingBreakfast: number[] = [];
     const missingLunch: number[] = [];
     const missingDinner: number[] = [];
 
     DAYS.forEach((day) => {
+      const breakfast =
+        mappings[
+          getMappingKey(
+            day,
+            "breakfast"
+          )
+        ];
+
       const lunch =
         mappings[
-          getMappingKey(day, "lunch")
+          getMappingKey(
+            day,
+            "lunch"
+          )
         ];
 
       const dinner =
         mappings[
-          getMappingKey(day, "dinner")
+          getMappingKey(
+            day,
+            "dinner"
+          )
         ];
+
+      if (!breakfast) {
+        missingBreakfast.push(day);
+      }
 
       if (!lunch) {
         missingLunch.push(day);
@@ -310,9 +352,12 @@ export default function SubscriptionPlanMenuCycle() {
     });
 
     return {
+      missingBreakfast,
       missingLunch,
       missingDinner,
+
       isValid:
+        missingBreakfast.length === 0 &&
         missingLunch.length === 0 &&
         missingDinner.length === 0,
     };
@@ -321,47 +366,24 @@ export default function SubscriptionPlanMenuCycle() {
   // =========================================================
   // SELECTED COUNT
   //
-  // Breakfast optional.
-  // Completion is based on required 60 meals.
+  // 30 DAYS × 3 MEALS = 90
   // =========================================================
 
   const selectedCount = useMemo(() => {
-    return Object.values(mappings).filter(
-      Boolean
-    ).length;
+    return Object.values(
+      mappings
+    ).filter(Boolean).length;
   }, [mappings]);
 
-  const requiredMealCount = 60;
-
-  const requiredSelectedCount = useMemo(() => {
-    let count = 0;
-
-    DAYS.forEach((day) => {
-      if (
-        mappings[
-          getMappingKey(day, "lunch")
-        ]
-      ) {
-        count++;
-      }
-
-      if (
-        mappings[
-          getMappingKey(day, "dinner")
-        ]
-      ) {
-        count++;
-      }
-    });
-
-    return count;
-  }, [mappings]);
-
-  const completionPercentage = Math.round(
-    (requiredSelectedCount /
-      requiredMealCount) *
+  const completionPercentage =
+    Math.min(
+      Math.round(
+        (selectedCount /
+          REQUIRED_MEAL_COUNT) *
+          100
+      ),
       100
-  );
+    );
 
   // =========================================================
   // SAVE
@@ -376,11 +398,22 @@ export default function SubscriptionPlanMenuCycle() {
     }
 
     // -------------------------------------------------------
-    // VALIDATE REQUIRED MEALS
+    // VALIDATE ALL 90 MAPPINGS
     // -------------------------------------------------------
 
     if (!validation.isValid) {
       const messages: string[] = [];
+
+      if (
+        validation.missingBreakfast
+          .length > 0
+      ) {
+        messages.push(
+          `Breakfast missing on Day ${validation.missingBreakfast.join(
+            ", "
+          )}`
+        );
+      }
 
       if (
         validation.missingLunch.length > 0
@@ -402,7 +435,25 @@ export default function SubscriptionPlanMenuCycle() {
         );
       }
 
-      setError(messages.join(" • "));
+      setError(
+        messages.join(" • ")
+      );
+
+      return;
+    }
+
+    // -------------------------------------------------------
+    // FINAL SAFETY CHECK
+    // -------------------------------------------------------
+
+    if (
+      selectedCount !==
+      REQUIRED_MEAL_COUNT
+    ) {
+      setError(
+        `Please complete all 90 meal mappings. Currently ${selectedCount}/90 are selected.`
+      );
+
       return;
     }
 
@@ -416,8 +467,7 @@ export default function SubscriptionPlanMenuCycle() {
       // =====================================================
       // CREATE PAYLOAD
       //
-      // Lunch + Dinner always included.
-      // Breakfast included only if selected.
+      // ALL THREE MEALS ARE SENT.
       // =====================================================
 
       const items: Mapping[] = [];
@@ -425,12 +475,14 @@ export default function SubscriptionPlanMenuCycle() {
       DAYS.forEach((day) => {
         MEAL_TYPES.forEach(
           (mealType) => {
-            const key = getMappingKey(
-              day,
-              mealType
-            );
+            const key =
+              getMappingKey(
+                day,
+                mealType
+              );
 
-            const menuId = mappings[key];
+            const menuId =
+              mappings[key];
 
             if (menuId) {
               items.push({
@@ -442,6 +494,16 @@ export default function SubscriptionPlanMenuCycle() {
           }
         );
       });
+
+      // -----------------------------------------------------
+      // FINAL PAYLOAD CHECK
+      // -----------------------------------------------------
+
+      if (items.length !== 90) {
+        throw new Error(
+          `Invalid menu cycle. Expected 90 mappings but received ${items.length}.`
+        );
+      }
 
       // =====================================================
       // SAVE
@@ -528,12 +590,14 @@ export default function SubscriptionPlanMenuCycle() {
   // =========================================================
 
   return (
-    <div className="min-h-screen bg-gray-50 pb-32">
+    <div className="min-h-screen bg-gray-50 pb-52">
+
       {/* =====================================================
           HEADER
       ===================================================== */}
 
       <div className="bg-gradient-to-br from-purple-500 to-purple-600 rounded-b-[40px] p-6 pb-8">
+
         <button
           onClick={() => navigate(-1)}
           className="flex items-center text-white mb-5"
@@ -550,36 +614,37 @@ export default function SubscriptionPlanMenuCycle() {
           {plan.title}
         </p>
 
+        {/* COMPLETION */}
+
         <div className="mt-5 bg-white/20 rounded-2xl p-4">
+
           <div className="flex justify-between items-center text-white">
+
             <span className="text-sm">
               Required Menu Setup
             </span>
 
             <span className="font-bold">
-              {requiredSelectedCount}/60
+              {selectedCount}/90
             </span>
+
           </div>
 
           <div className="mt-3 h-2 bg-white/20 rounded-full overflow-hidden">
+
             <div
               className="h-full bg-white rounded-full transition-all"
               style={{
-                width: `${Math.min(
-                  completionPercentage,
-                  100
-                )}%`,
+                width: `${completionPercentage}%`,
               }}
             />
+
           </div>
 
           <p className="text-xs text-purple-100 mt-2">
-            {Math.min(
-              completionPercentage,
-              100
-            )}
-            % completed
+            {completionPercentage}% completed
           </p>
+
         </div>
       </div>
 
@@ -588,18 +653,24 @@ export default function SubscriptionPlanMenuCycle() {
       ===================================================== */}
 
       <div className="p-5">
+
         <div className="bg-blue-50 border border-blue-100 rounded-2xl p-4">
+
           <p className="text-sm text-blue-800 font-semibold">
             Existing Menu Only
           </p>
 
           <p className="text-xs text-blue-600 mt-1">
-            Lunch and Dinner are required for all
-            30 days. Breakfast is optional and can
-            be added for any day. No new menu will
-            be created.
+            Breakfast, Lunch and Dinner must be
+            mapped for all 30 days using your
+            existing menus. Customers can decide
+            later whether they want the Breakfast
+            subscription. No new menu will be
+            created.
           </p>
+
         </div>
+
       </div>
 
       {/* =====================================================
@@ -608,15 +679,20 @@ export default function SubscriptionPlanMenuCycle() {
 
       {plan.breakfast_available && (
         <div className="mx-5 mb-4 bg-orange-50 border border-orange-100 rounded-2xl p-4">
+
           <p className="text-sm text-orange-800 font-semibold">
-            🍳 Breakfast Add-on
+            🍳 Breakfast Menu Required
           </p>
 
           <p className="text-xs text-orange-600 mt-1">
-            Breakfast is optional.
+            Breakfast must be configured for all
+            30 days. Customers can later choose
+            whether they want the Breakfast
+            subscription.
             {plan.breakfast_price != null &&
-              ` Price: ₹${plan.breakfast_price}/day.`}
+              ` Customer Breakfast price: ₹${plan.breakfast_price}/day.`}
           </p>
+
         </div>
       )}
 
@@ -626,9 +702,11 @@ export default function SubscriptionPlanMenuCycle() {
 
       {error && (
         <div className="mx-5 mb-4 bg-red-50 border border-red-200 rounded-2xl p-4">
+
           <p className="text-sm text-red-700 font-medium">
             {error}
           </p>
+
         </div>
       )}
 
@@ -638,9 +716,11 @@ export default function SubscriptionPlanMenuCycle() {
 
       {success && (
         <div className="mx-5 mb-4 bg-green-50 border border-green-200 rounded-2xl p-4">
+
           <p className="text-sm text-green-700 font-medium">
             {success}
           </p>
+
         </div>
       )}
 
@@ -649,7 +729,9 @@ export default function SubscriptionPlanMenuCycle() {
       ===================================================== */}
 
       <div className="px-5 space-y-4">
+
         {DAYS.map((day) => {
+
           const lunchSelected =
             Boolean(
               mappings[
@@ -684,19 +766,27 @@ export default function SubscriptionPlanMenuCycle() {
             Number(
               breakfastSelected
             ) +
-            Number(lunchSelected) +
-            Number(dinnerSelected);
+            Number(
+              lunchSelected
+            ) +
+            Number(
+              dinnerSelected
+            );
 
           return (
             <div
               key={day}
               className="bg-white rounded-3xl shadow-sm border border-gray-100 overflow-hidden"
             >
+
               {/* DAY HEADER */}
 
               <div className="bg-gray-50 px-5 py-4 border-b border-gray-100">
+
                 <div className="flex justify-between items-center">
+
                   <div>
+
                     <p className="text-xs text-gray-500 uppercase tracking-wide">
                       Subscription Cycle
                     </p>
@@ -704,19 +794,33 @@ export default function SubscriptionPlanMenuCycle() {
                     <h2 className="text-xl font-bold text-gray-800">
                       Day {day}
                     </h2>
+
                   </div>
 
-                  <div className="bg-purple-100 text-purple-700 px-3 py-1 rounded-full text-xs font-semibold">
+                  <div
+                    className={`
+                      px-3 py-1 rounded-full text-xs font-semibold
+                      ${
+                        daySelectedCount === 3
+                          ? "bg-green-100 text-green-700"
+                          : "bg-red-100 text-red-700"
+                      }
+                    `}
+                  >
                     {daySelectedCount}/3
                   </div>
+
                 </div>
+
               </div>
 
               {/* MEALS */}
 
-              <div className="p-5 space-y-4">
+              <div className="p-5 space-y-5">
+
                 {MEAL_TYPES.map(
                   (mealType) => {
+
                     const key =
                       getMappingKey(
                         day,
@@ -726,39 +830,44 @@ export default function SubscriptionPlanMenuCycle() {
                     const selectedMenuId =
                       mappings[key];
 
-                    const isBreakfast =
-                      mealType ===
-                      "breakfast";
-
                     return (
                       <div
                         key={mealType}
                         className="space-y-2"
                       >
+
+                        {/* LABEL */}
+
                         <label className="flex items-center justify-between">
-                          <span className="font-semibold text-gray-800 capitalize">
-                            {mealType ===
-                              "breakfast" &&
-                              "🍳 "}
-
-                            {mealType ===
-                              "lunch" &&
-                              "🍛 "}
-
-                            {mealType ===
-                              "dinner" &&
-                              "🍽️ "}
-
-                            {mealType}
-
-                            {isBreakfast && (
-                              <span className="ml-2 text-[10px] bg-orange-100 text-orange-600 px-2 py-1 rounded-full">
-                                Optional
-                              </span>
-                            )}
-                          </span>
 
                           <div className="flex items-center gap-2">
+
+                            <span className="font-semibold text-gray-800 capitalize">
+
+                              {mealType ===
+                                "breakfast" &&
+                                "🍳 "}
+
+                              {mealType ===
+                                "lunch" &&
+                                "🍛 "}
+
+                              {mealType ===
+                                "dinner" &&
+                                "🍽️ "}
+
+                              {mealType}
+
+                            </span>
+
+                            <span className="text-[10px] bg-red-50 text-red-600 border border-red-100 px-2 py-0.5 rounded-full font-bold uppercase">
+                              Required
+                            </span>
+
+                          </div>
+
+                          <div className="flex items-center gap-2">
+
                             {selectedMenuId && (
                               <span className="text-xs text-green-600 font-semibold">
                                 Selected
@@ -779,8 +888,12 @@ export default function SubscriptionPlanMenuCycle() {
                                 Clear
                               </button>
                             )}
+
                           </div>
+
                         </label>
+
+                        {/* MENU SELECT */}
 
                         <select
                           value={
@@ -808,10 +921,9 @@ export default function SubscriptionPlanMenuCycle() {
                             focus:ring-purple-300
                           "
                         >
+
                           <option value="">
-                            {isBreakfast
-                              ? "Skip breakfast"
-                              : `Select existing ${mealType} menu`}
+                            {`Select existing ${mealType} menu`}
                           </option>
 
                           {menus.map(
@@ -828,23 +940,32 @@ export default function SubscriptionPlanMenuCycle() {
                               </option>
                             )
                           )}
+
                         </select>
+
                       </div>
                     );
                   }
                 )}
+
               </div>
+
             </div>
           );
         })}
+
       </div>
 
       {/* =====================================================
           SAVE BUTTON
+          IMPORTANT:
+          bottom-[80px] keeps it above mobile navigation.
       ===================================================== */}
 
-      <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 p-4 shadow-2xl">
+      <div className="fixed bottom-[80px] left-0 right-0 z-50 bg-white/95 backdrop-blur-md border-t border-gray-200 p-4 shadow-2xl">
+
         <div className="max-w-[600px] mx-auto">
+
           <button
             onClick={handleSave}
             disabled={
@@ -865,10 +986,11 @@ export default function SubscriptionPlanMenuCycle() {
                 saving ||
                 !validation.isValid
                   ? "bg-gray-300 text-gray-500 cursor-not-allowed"
-                  : "bg-purple-600 text-white hover:bg-purple-700"
+                  : "bg-purple-600 text-white hover:bg-purple-700 active:scale-[0.99]"
               }
             `}
           >
+
             {saving ? (
               <>
                 <RefreshCw className="w-5 h-5 animate-spin" />
@@ -880,16 +1002,26 @@ export default function SubscriptionPlanMenuCycle() {
                 Save 30-Day Menu
               </>
             )}
+
           </button>
 
           {!validation.isValid && (
             <p className="text-center text-xs text-gray-500 mt-2">
-              Lunch and dinner must be selected
-              for all 30 days.
+              Breakfast, lunch and dinner must be
+              selected for all 30 days.
             </p>
           )}
+
+          {validation.isValid && (
+            <p className="text-center text-xs text-green-600 font-medium mt-2">
+              All 90 meals are configured.
+            </p>
+          )}
+
         </div>
+
       </div>
+
     </div>
   );
 }
