@@ -31,6 +31,7 @@ import Support from "./pages/terms_andconditions/support";
 import CreateSubscriptionPlan from "./pages/CreateSubscriptionPlan";
 import EditSubscriptionPlan from "./pages/EditSubscriptionPlan";
 import SubscriptionPlans from "./pages/SubscriptionPlans";
+import SubscriptionPlanMenuCycle from "./pages/SubscriptionPlanMenuCycle";
 import Subscribers from "./pages/Subscribers";
 import DeleteAccount from "./pages/DeleteAccount";
 
@@ -98,6 +99,9 @@ export const router = createBrowserRouter([
       { path: "subscription-plans", element: <SubscriptionPlans /> },
       { path: "subscription-plans/create", element: <CreateSubscriptionPlan /> },
       { path: "subscription-plans/edit/:id", element: <EditSubscriptionPlan /> },
+      { path: "subscription-plans/menu-cycle/:planId",
+  element: <SubscriptionPlanMenuCycle />,
+},
       { path: "subscribers", element: <Subscribers /> },
     ],
   },
