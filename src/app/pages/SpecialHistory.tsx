@@ -108,7 +108,7 @@ export default function SpecialHistory() {
         }
       );
 
-      setSelectedSpecial(res.data);
+      setSelectedSpecial(res.data?.special || null);
     } catch (err: any) {
       console.error(
         "SPECIAL DETAIL ERROR:",
