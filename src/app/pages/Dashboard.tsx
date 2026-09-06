@@ -2,8 +2,8 @@ import { useNavigate } from "react-router";
 import { useEffect, useState } from "react";
 import { MapPin } from "lucide-react";
 import Location from "./Location";
-
 import axios from "axios";
+
 import {
   Package,
   Star,
@@ -12,7 +12,6 @@ import {
   TrendingUp,
   Clock,
   CheckCircle,
-  Truck,
   ChefHat,
   Utensils,
   Users,
@@ -20,6 +19,8 @@ import {
   ArrowUpRight,
   ChevronRight,
   Sparkles,
+  ShoppingBag,
+  Flame,
 } from "lucide-react";
 
 import {
@@ -59,7 +60,7 @@ export default function Dashboard() {
   }, []);
 
   // =========================================================
-  // FETCH DASHBOARD
+  // DASHBOARD API — SAME
   // =========================================================
 
   const fetchDashboard = async () => {
@@ -78,10 +79,6 @@ export default function Dashboard() {
       setStats(res.data || {});
       setWeeklyData(res.data?.weekly_data || []);
       setTopDishes(res.data?.top_dishes || []);
-
-      // =====================================================
-      // ORDERS API
-      // =====================================================
 
       const ordersRes = await axios.get(
         "https://chef-backend-qh12.onrender.com/orders/chef-orders",
@@ -121,7 +118,7 @@ export default function Dashboard() {
   };
 
   // =========================================================
-  // LOCATION LOAD
+  // LOCATION
   // =========================================================
 
   useEffect(() => {
@@ -171,90 +168,107 @@ export default function Dashboard() {
   const getStatusStyle = (status: string) => {
     switch (status) {
       case "accepted":
-        return "bg-emerald-50 text-emerald-700";
+        return "bg-emerald-50 text-emerald-600 border-emerald-100";
 
       case "preparing":
-        return "bg-purple-50 text-purple-700";
+        return "bg-violet-50 text-violet-600 border-violet-100";
 
       case "ready":
-        return "bg-orange-50 text-orange-700";
+        return "bg-orange-50 text-orange-600 border-orange-100";
 
       default:
-        return "bg-slate-50 text-slate-600";
+        return "bg-slate-50 text-slate-500 border-slate-100";
     }
   };
 
-  const monthlyEarnings =
-    Number(stats?.monthly_earnings || 0);
+  const todayEarnings = Number(
+    stats?.today_earnings || 0
+  );
 
-  const todayEarnings =
-    Number(stats?.today_earnings || 0);
+  const monthlyEarnings = Number(
+    stats?.monthly_earnings || 0
+  );
 
-  const monthlyOrders =
-    Number(stats?.monthly_orders || 0);
+  const monthlyOrders = Number(
+    stats?.monthly_orders || 0
+  );
 
-  const avgOrderValue =
-    Math.round(Number(stats?.avg_order_value || 0));
+  const avgOrderValue = Math.round(
+    Number(stats?.avg_order_value || 0)
+  );
 
-  const avgRating =
-    Number(stats?.avg_rating || 0);
+  const avgRating = Number(
+    stats?.avg_rating || 0
+  );
 
   return (
-    <div className="min-h-screen bg-[#F6F5F2] pb-28">
+    <div className="min-h-screen bg-[#F7F7F5] pb-28">
 
       {/* =====================================================
-          PREMIUM HEADER / HERO
+          PREMIUM HEADER
       ===================================================== */}
 
-      <div className="relative overflow-hidden rounded-b-[2.8rem] bg-[#17131F] px-5 pb-32 pt-8 text-white sm:px-8">
+      <section className="relative overflow-hidden bg-white">
 
-        {/* Background glow */}
+        {/* Decorative blobs */}
 
-        <div className="pointer-events-none absolute -right-24 -top-24 h-72 w-72 rounded-full bg-[#FF7A30]/20 blur-3xl" />
+        <div className="pointer-events-none absolute -right-20 -top-20 h-72 w-72 rounded-full bg-orange-200/50 blur-3xl" />
 
-        <div className="pointer-events-none absolute -left-28 bottom-0 h-64 w-64 rounded-full bg-[#5F2EEA]/20 blur-3xl" />
+        <div className="pointer-events-none absolute -left-24 top-32 h-64 w-64 rounded-full bg-purple-200/40 blur-3xl" />
 
-        <div className="pointer-events-none absolute right-20 bottom-0 h-40 w-40 rounded-full bg-[#0FAD6E]/10 blur-3xl" />
+        <div className="pointer-events-none absolute right-1/3 top-20 h-28 w-28 rounded-full bg-yellow-100/70 blur-2xl" />
 
-        <div className="relative z-10">
 
-          {/* TOP BAR */}
+        <div className="relative px-5 pb-28 pt-7 sm:px-8">
+
+          {/* TOP */}
 
           <div className="flex items-center justify-between">
 
             <div className="flex items-center gap-3">
 
-              <div className="flex h-11 w-11 items-center justify-center rounded-2xl border border-white/10 bg-white/10 backdrop-blur-md">
+              <div className="relative">
 
-                <ChefHat className="h-5 w-5 text-orange-300" />
+                <div className="flex h-12 w-12 items-center justify-center rounded-[17px] bg-gradient-to-br from-orange-500 via-orange-500 to-red-500 shadow-lg shadow-orange-200">
+
+                  <ChefHat className="h-5.5 w-5.5 text-white" />
+
+                </div>
+
+                <span className="absolute -bottom-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full border-2 border-white bg-emerald-500">
+
+                  <span className="h-1.5 w-1.5 rounded-full bg-white" />
+
+                </span>
 
               </div>
 
               <div>
 
-                <p className="text-[8px] font-bold uppercase tracking-[0.2em] text-white/40">
-                  Eat Unity
+                <p className="text-[8px] font-black uppercase tracking-[0.25em] text-orange-500">
+                  EAT UNITY
                 </p>
 
-                <p className="mt-1 text-xs font-bold text-white">
-                  Chef Command Center
+                <p className="mt-0.5 text-xs font-extrabold text-slate-900">
+                  Chef Studio
                 </p>
 
               </div>
 
             </div>
 
+
             <motion.button
               whileTap={{ scale: 0.9 }}
               onClick={() =>
                 navigate("/notifications")
               }
-              className="relative flex h-11 w-11 items-center justify-center rounded-2xl border border-white/10 bg-white/10 backdrop-blur-md"
+              className="relative flex h-12 w-12 items-center justify-center rounded-[17px] border border-slate-100 bg-white shadow-[0_8px_25px_rgba(15,23,42,0.07)]"
             >
 
-              <Bell className="h-5 w-5 text-white" />
+              <Bell className="h-5 w-5 text-slate-700" />
 
-              <span className="absolute right-2 top-2 h-2 w-2 rounded-full bg-orange-400 ring-2 ring-[#17131F]" />
+              <span className="absolute right-2.5 top-2.5 h-2.5 w-2.5 rounded-full bg-orange-500 ring-2 ring-white" />
 
             </motion.button>
 
@@ -265,23 +279,39 @@ export default function Dashboard() {
 
           <div className="mt-9">
 
-            <div className="mb-2 flex items-center gap-2">
+            <div className="flex items-center gap-2">
 
-              <span className="rounded-full bg-orange-400/10 px-2.5 py-1 text-[8px] font-bold uppercase tracking-wider text-orange-300">
-                Kitchen Online
+              <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-3 py-1.5">
+
+                <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-emerald-500" />
+
+                <span className="text-[8px] font-black uppercase tracking-wider text-emerald-600">
+                  Kitchen Live
+                </span>
+
               </span>
 
-              <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
+              <span className="text-[9px] font-semibold text-slate-400">
+                •
+              </span>
+
+              <span className="text-[9px] font-semibold text-slate-400">
+                Today
+              </span>
 
             </div>
 
-            <h1 className="text-[30px] font-bold leading-tight tracking-tight">
-              Good day, Chef 👨‍🍳
+            <h1 className="mt-3 text-[32px] font-black leading-[1.05] tracking-[-1.5px] text-slate-900">
+              Good morning,
+              <br />
+              <span className="text-orange-500">
+                Chef 👨‍🍳
+              </span>
             </h1>
 
-            <p className="mt-2 max-w-xs text-[11px] leading-5 text-white/50">
-              Your kitchen is ready. Let's make
-              today delicious and profitable.
+            <p className="mt-3 max-w-xs text-[11px] leading-5 text-slate-500">
+              Everything you need to run your
+              kitchen is right here.
             </p>
 
           </div>
@@ -294,57 +324,89 @@ export default function Dashboard() {
             onClick={() =>
               setShowLocation(true)
             }
-            className="mt-6 flex w-full items-center gap-3 rounded-2xl border border-white/10 bg-white/[0.07] px-4 py-3 text-left backdrop-blur-md"
+            className="mt-6 flex w-full items-center gap-3 rounded-[19px] border border-slate-100 bg-white px-4 py-3.5 text-left shadow-[0_10px_30px_rgba(15,23,42,0.07)]"
           >
 
-            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-white/10">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-orange-50">
 
-              <MapPin className="h-4 w-4 text-orange-300" />
+              <MapPin className="h-4 w-4 text-orange-500" />
 
             </div>
 
             <div className="min-w-0 flex-1">
 
-              <p className="text-[7px] font-bold uppercase tracking-[0.15em] text-white/35">
-                Kitchen Location
+              <p className="text-[7px] font-black uppercase tracking-[0.18em] text-slate-400">
+                Serving From
               </p>
 
-              <p className="mt-1 truncate text-[10px] font-semibold text-white/80">
+              <p className="mt-1 truncate text-[10px] font-extrabold text-slate-800">
                 {locationName}
               </p>
 
             </div>
 
-            <ChevronRight className="h-4 w-4 text-white/30" />
+            <div className="flex items-center gap-1 rounded-full bg-orange-50 px-2 py-1">
+
+              <span className="text-[7px] font-black text-orange-500">
+                CHANGE
+              </span>
+
+              <ChevronRight className="h-3 w-3 text-orange-400" />
+
+            </div>
 
           </motion.button>
 
         </div>
 
-      </div>
+
+        {/* WAVE */}
+
+        <div className="absolute bottom-0 left-0 h-16 w-full overflow-hidden">
+
+          <div className="absolute -bottom-12 left-[-5%] h-28 w-[110%] rounded-[50%] bg-[#F7F7F5]" />
+
+        </div>
+
+      </section>
 
 
       {/* =====================================================
           MAIN CONTENT
       ===================================================== */}
 
-      <div className="relative z-20 -mt-24 px-5 sm:px-8">
+      <main className="relative z-10 -mt-10 px-5 sm:px-8">
 
 
         {/* ===================================================
-            TODAY'S COMMAND CARD
+            REVENUE HERO
         =================================================== */}
 
         <motion.div
-          initial={{ opacity: 0, y: 25 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.45 }}
-          className="relative overflow-hidden rounded-[2rem] bg-gradient-to-br from-[#FF7A30] via-[#F5652C] to-[#D94C27] p-5 text-white shadow-[0_20px_45px_rgba(220,90,40,0.22)]"
+          initial={{
+            opacity: 0,
+            y: 25,
+          }}
+          animate={{
+            opacity: 1,
+            y: 0,
+          }}
+          transition={{
+            duration: 0.45,
+          }}
+          className="relative overflow-hidden rounded-[28px] bg-gradient-to-br from-[#FF7A18] via-[#FF641E] to-[#F0442C] p-5 text-white shadow-[0_20px_45px_rgba(249,115,22,0.25)]"
         >
 
-          <div className="pointer-events-none absolute -right-10 -top-10 h-40 w-40 rounded-full bg-white/10 blur-2xl" />
+          {/* decorative circles */}
 
-          <div className="relative z-10">
+          <div className="pointer-events-none absolute -right-12 -top-12 h-44 w-44 rounded-full bg-white/15 blur-xl" />
+
+          <div className="pointer-events-none absolute -bottom-16 right-24 h-32 w-32 rounded-full bg-yellow-300/10 blur-2xl" />
+
+          <div className="pointer-events-none absolute bottom-5 left-32 h-20 w-20 rounded-full bg-white/5 blur-xl" />
+
+
+          <div className="relative">
 
             <div className="flex items-start justify-between">
 
@@ -352,68 +414,80 @@ export default function Dashboard() {
 
                 <div className="flex items-center gap-2">
 
-                  <Sparkles className="h-4 w-4 text-orange-100" />
+                  <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-white/15">
 
-                  <p className="text-[8px] font-bold uppercase tracking-[0.18em] text-white/60">
-                    Today's Performance
-                  </p>
+                    <IndianRupee className="h-3.5 w-3.5" />
+
+                  </div>
+
+                  <span className="text-[8px] font-black uppercase tracking-[0.18em] text-white/70">
+                    Today's Revenue
+                  </span>
 
                 </div>
 
-                <p className="mt-3 text-[34px] font-bold tracking-tight">
+                <p className="mt-3 text-[38px] font-black tracking-[-1px]">
                   ₹{todayEarnings.toLocaleString()}
                 </p>
 
-                <p className="mt-1 text-[9px] text-white/60">
-                  Earnings generated today
-                </p>
+                <div className="mt-1 flex items-center gap-1.5">
+
+                  <ArrowUpRight className="h-3.5 w-3.5" />
+
+                  <span className="text-[9px] font-semibold text-white/65">
+                    Keep the momentum going
+                  </span>
+
+                </div>
 
               </div>
 
 
-              <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-white/10 backdrop-blur-md">
+              <div className="flex h-14 w-14 items-center justify-center rounded-[19px] bg-white/15 shadow-inner backdrop-blur-md">
 
-                <IndianRupee className="h-5 w-5 text-white" />
+                <Flame className="h-6 w-6 text-yellow-200" />
 
               </div>
 
             </div>
 
 
-            <div className="mt-5 grid grid-cols-2 gap-3">
+            {/* MINI STATS */}
 
-              <div className="rounded-2xl border border-white/10 bg-black/10 px-3 py-3">
+            <div className="mt-6 grid grid-cols-2 gap-3">
+
+              <div className="rounded-[18px] border border-white/10 bg-white/10 p-3.5 backdrop-blur-sm">
 
                 <div className="flex items-center gap-2">
 
-                  <Package className="h-3.5 w-3.5 text-white/60" />
+                  <Package className="h-3.5 w-3.5 text-white/70" />
 
-                  <span className="text-[8px] text-white/50">
+                  <span className="text-[8px] font-semibold text-white/60">
                     Total Orders
                   </span>
 
                 </div>
 
-                <p className="mt-1 text-lg font-bold">
+                <p className="mt-1 text-xl font-black">
                   {stats?.total_orders || 0}
                 </p>
 
               </div>
 
 
-              <div className="rounded-2xl border border-white/10 bg-black/10 px-3 py-3">
+              <div className="rounded-[18px] border border-white/10 bg-white/10 p-3.5 backdrop-blur-sm">
 
                 <div className="flex items-center gap-2">
 
-                  <Star className="h-3.5 w-3.5 text-yellow-200" />
+                  <Star className="h-3.5 w-3.5 fill-yellow-200 text-yellow-200" />
 
-                  <span className="text-[8px] text-white/50">
+                  <span className="text-[8px] font-semibold text-white/60">
                     Rating
                   </span>
 
                 </div>
 
-                <p className="mt-1 text-lg font-bold">
+                <p className="mt-1 text-xl font-black">
                   {avgRating.toFixed(1)}
                 </p>
 
@@ -427,35 +501,45 @@ export default function Dashboard() {
 
 
         {/* ===================================================
-            KPI GRID
+            KPI STRIP
         =================================================== */}
 
         <div className="mt-4 grid grid-cols-2 gap-3">
 
           <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.08 }}
-            className="rounded-[1.6rem] border border-slate-100 bg-white p-4 shadow-[0_8px_25px_rgba(20,20,30,0.05)]"
+            initial={{
+              opacity: 0,
+              y: 15,
+            }}
+            animate={{
+              opacity: 1,
+              y: 0,
+            }}
+            transition={{
+              delay: 0.08,
+            }}
+            className="rounded-[22px] border border-slate-100 bg-white p-4 shadow-[0_10px_30px_rgba(15,23,42,0.055)]"
           >
 
             <div className="flex items-center justify-between">
 
-              <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-purple-50">
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-purple-50">
 
                 <TrendingUp className="h-4 w-4 text-purple-600" />
 
               </div>
 
-              <ArrowUpRight className="h-4 w-4 text-emerald-500" />
+              <span className="rounded-full bg-emerald-50 px-2 py-1 text-[7px] font-black text-emerald-600">
+                REVENUE
+              </span>
 
             </div>
 
             <p className="mt-4 text-[8px] font-bold uppercase tracking-wider text-slate-400">
-              Monthly Revenue
+              This Month
             </p>
 
-            <p className="mt-1 text-xl font-bold text-slate-900">
+            <p className="mt-1 text-[21px] font-black tracking-tight text-slate-900">
               ₹{monthlyEarnings.toLocaleString()}
             </p>
 
@@ -463,31 +547,39 @@ export default function Dashboard() {
 
 
           <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.14 }}
-            className="rounded-[1.6rem] border border-slate-100 bg-white p-4 shadow-[0_8px_25px_rgba(20,20,30,0.05)]"
+            initial={{
+              opacity: 0,
+              y: 15,
+            }}
+            animate={{
+              opacity: 1,
+              y: 0,
+            }}
+            transition={{
+              delay: 0.14,
+            }}
+            className="rounded-[22px] border border-slate-100 bg-white p-4 shadow-[0_10px_30px_rgba(15,23,42,0.055)]"
           >
 
             <div className="flex items-center justify-between">
 
-              <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-orange-50">
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-50">
 
-                <Package className="h-4 w-4 text-orange-500" />
+                <ShoppingBag className="h-4 w-4 text-blue-600" />
 
               </div>
 
-              <span className="rounded-full bg-orange-50 px-2 py-1 text-[7px] font-bold text-orange-500">
-                MONTH
+              <span className="rounded-full bg-blue-50 px-2 py-1 text-[7px] font-black text-blue-600">
+                ORDERS
               </span>
 
             </div>
 
             <p className="mt-4 text-[8px] font-bold uppercase tracking-wider text-slate-400">
-              Orders
+              This Month
             </p>
 
-            <p className="mt-1 text-xl font-bold text-slate-900">
+            <p className="mt-1 text-[21px] font-black tracking-tight text-slate-900">
               {monthlyOrders}
             </p>
 
@@ -497,97 +589,45 @@ export default function Dashboard() {
 
 
         {/* ===================================================
-            MONTHLY SNAPSHOT
+            PERFORMANCE
         =================================================== */}
 
         <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.2 }}
-          className="mt-4 overflow-hidden rounded-[1.8rem] bg-[#211C29] p-5 text-white"
+          initial={{
+            opacity: 0,
+            y: 15,
+          }}
+          animate={{
+            opacity: 1,
+            y: 0,
+          }}
+          transition={{
+            delay: 0.2,
+          }}
+          className="mt-4 overflow-hidden rounded-[25px] border border-slate-100 bg-white p-5 shadow-[0_10px_30px_rgba(15,23,42,0.055)]"
         >
 
           <div className="flex items-center justify-between">
 
             <div>
 
-              <p className="text-[8px] font-bold uppercase tracking-[0.18em] text-white/35">
-                Business Snapshot
-              </p>
+              <div className="flex items-center gap-2">
 
-              <h3 className="mt-2 text-lg font-bold">
-                This Month
-              </h3>
+                <div className="h-1.5 w-1.5 rounded-full bg-orange-500" />
 
-            </div>
+                <p className="text-[8px] font-black uppercase tracking-[0.17em] text-slate-400">
+                  Analytics
+                </p>
 
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-white/10">
+              </div>
 
-              <IndianRupee className="h-4 w-4 text-emerald-300" />
-
-            </div>
-
-          </div>
-
-
-          <div className="mt-5 grid grid-cols-2 gap-3">
-
-            <div className="rounded-2xl bg-white/[0.06] p-3">
-
-              <p className="text-[8px] text-white/40">
-                Revenue
-              </p>
-
-              <p className="mt-1 text-lg font-bold">
-                ₹{monthlyEarnings.toLocaleString()}
-              </p>
-
-            </div>
-
-
-            <div className="rounded-2xl bg-white/[0.06] p-3">
-
-              <p className="text-[8px] text-white/40">
-                Avg / Order
-              </p>
-
-              <p className="mt-1 text-lg font-bold">
-                ₹{avgOrderValue}
-              </p>
-
-            </div>
-
-          </div>
-
-        </motion.div>
-
-
-        {/* ===================================================
-            WEEKLY ANALYTICS
-        =================================================== */}
-
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.25 }}
-          className="mt-4 rounded-[1.8rem] border border-slate-100 bg-white p-5 shadow-[0_8px_25px_rgba(20,20,30,0.05)]"
-        >
-
-          <div className="flex items-start justify-between">
-
-            <div>
-
-              <p className="text-[8px] font-bold uppercase tracking-[0.16em] text-slate-400">
-                Analytics
-              </p>
-
-              <h3 className="mt-1 text-base font-bold text-slate-900">
+              <h3 className="mt-1 text-[17px] font-black text-slate-900">
                 Weekly Performance
               </h3>
 
             </div>
 
-            <div className="rounded-xl bg-orange-50 px-3 py-2">
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-orange-50">
 
               <TrendingUp className="h-4 w-4 text-orange-500" />
 
@@ -596,7 +636,7 @@ export default function Dashboard() {
           </div>
 
 
-          <div className="mt-5 h-[210px]">
+          <div className="mt-5 h-[205px]">
 
             {weeklyData.length > 0 ? (
 
@@ -610,6 +650,7 @@ export default function Dashboard() {
                   <CartesianGrid
                     strokeDasharray="3 5"
                     vertical={false}
+                    stroke="#F1F5F9"
                   />
 
                   <XAxis
@@ -618,6 +659,7 @@ export default function Dashboard() {
                     tickLine={false}
                     tick={{
                       fontSize: 9,
+                      fill: "#94A3B8",
                     }}
                   />
 
@@ -626,25 +668,28 @@ export default function Dashboard() {
                     tickLine={false}
                     tick={{
                       fontSize: 9,
+                      fill: "#94A3B8",
                     }}
                   />
 
                   <Tooltip
                     contentStyle={{
-                      borderRadius: "14px",
-                      border: "none",
+                      borderRadius: "16px",
+                      border: "1px solid #F1F5F9",
                       boxShadow:
-                        "0 10px 30px rgba(0,0,0,0.1)",
+                        "0 15px 35px rgba(15,23,42,0.12)",
                     }}
                   />
 
                   <Line
                     type="monotone"
                     dataKey="earnings"
-                    stroke="#f97316"
+                    stroke="#F97316"
                     strokeWidth={3}
                     dot={{
                       r: 4,
+                      fill: "#F97316",
+                      strokeWidth: 2,
                     }}
                     activeDot={{
                       r: 6,
@@ -661,10 +706,10 @@ export default function Dashboard() {
 
                 <div className="text-center">
 
-                  <TrendingUp className="mx-auto h-8 w-8 text-slate-200" />
+                  <TrendingUp className="mx-auto h-9 w-9 text-slate-200" />
 
                   <p className="mt-2 text-[10px] text-slate-400">
-                    Performance data will appear here
+                    Your performance graph will appear here
                   </p>
 
                 </div>
@@ -682,17 +727,17 @@ export default function Dashboard() {
             QUICK ACTIONS
         =================================================== */}
 
-        <div className="mt-7">
+        <section className="mt-8">
 
           <div className="mb-4 flex items-end justify-between">
 
             <div>
 
-              <p className="text-[8px] font-bold uppercase tracking-[0.16em] text-slate-400">
-                Kitchen Tools
+              <p className="text-[8px] font-black uppercase tracking-[0.18em] text-slate-400">
+                Manage Kitchen
               </p>
 
-              <h3 className="mt-1 text-lg font-bold text-slate-900">
+              <h3 className="mt-1 text-[19px] font-black text-slate-900">
                 Quick Actions
               </h3>
 
@@ -705,33 +750,38 @@ export default function Dashboard() {
 
           <div className="grid grid-cols-2 gap-3">
 
+
             {/* ADD MENU */}
 
             <motion.button
-              whileTap={{ scale: 0.97 }}
+              whileTap={{
+                scale: 0.96,
+              }}
               onClick={() =>
                 navigate("/menu/add")
               }
-              className="group relative overflow-hidden rounded-[1.7rem] bg-gradient-to-br from-[#FF7A30] to-[#F05228] p-5 text-left text-white shadow-[0_12px_25px_rgba(255,122,48,0.18)]"
+              className="relative min-h-[160px] overflow-hidden rounded-[24px] bg-gradient-to-br from-orange-500 to-red-500 p-5 text-left text-white shadow-[0_15px_30px_rgba(249,115,22,0.18)]"
             >
 
-              <div className="absolute -right-5 -top-5 h-20 w-20 rounded-full bg-white/10 blur-xl" />
+              <div className="absolute -right-8 -top-8 h-28 w-28 rounded-full bg-white/10" />
 
               <div className="relative">
 
-                <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-white/15">
+                <div className="flex h-11 w-11 items-center justify-center rounded-[15px] bg-white/15">
 
                   <Plus className="h-5 w-5" />
 
                 </div>
 
-                <p className="mt-5 text-sm font-bold">
-                  Add Menu Item
+                <p className="mt-6 text-[14px] font-black">
+                  Add Menu
                 </p>
 
-                <p className="mt-1 text-[8px] text-white/60">
-                  Create something delicious
+                <p className="mt-1 text-[8px] leading-4 text-white/65">
+                  Create a new delicious item
                 </p>
+
+                <ArrowUpRight className="absolute right-0 top-1 h-4 w-4 text-white/50" />
 
               </div>
 
@@ -741,30 +791,34 @@ export default function Dashboard() {
             {/* TOMORROW */}
 
             <motion.button
-              whileTap={{ scale: 0.97 }}
+              whileTap={{
+                scale: 0.96,
+              }}
               onClick={() =>
                 navigate("/tomorrow-special")
               }
-              className="group relative overflow-hidden rounded-[1.7rem] bg-gradient-to-br from-[#5F2EEA] to-[#392080] p-5 text-left text-white shadow-[0_12px_25px_rgba(95,46,234,0.18)]"
+              className="relative min-h-[160px] overflow-hidden rounded-[24px] bg-gradient-to-br from-violet-500 to-purple-700 p-5 text-left text-white shadow-[0_15px_30px_rgba(139,92,246,0.18)]"
             >
 
-              <div className="absolute -right-5 -top-5 h-20 w-20 rounded-full bg-white/10 blur-xl" />
+              <div className="absolute -right-8 -top-8 h-28 w-28 rounded-full bg-white/10" />
 
               <div className="relative">
 
-                <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-white/10">
+                <div className="flex h-11 w-11 items-center justify-center rounded-[15px] bg-white/15">
 
                   <Sparkles className="h-5 w-5" />
 
                 </div>
 
-                <p className="mt-5 text-sm font-bold">
-                  Tomorrow Special
+                <p className="mt-6 text-[14px] font-black">
+                  Tomorrow
                 </p>
 
-                <p className="mt-1 text-[8px] text-white/60">
-                  Plan tomorrow's highlight
+                <p className="mt-1 text-[8px] leading-4 text-white/65">
+                  Plan your special menu
                 </p>
+
+                <ArrowUpRight className="absolute right-0 top-1 h-4 w-4 text-white/50" />
 
               </div>
 
@@ -774,30 +828,36 @@ export default function Dashboard() {
             {/* SUBSCRIPTIONS */}
 
             <motion.button
-              whileTap={{ scale: 0.97 }}
+              whileTap={{
+                scale: 0.96,
+              }}
               onClick={() =>
                 navigate(
                   "/app/subscription-plans"
                 )
               }
-              className="group relative overflow-hidden rounded-[1.7rem] bg-gradient-to-br from-[#E64980] to-[#8B2FC9] p-5 text-left text-white shadow-[0_12px_25px_rgba(200,60,150,0.15)]"
+              className="relative min-h-[160px] overflow-hidden rounded-[24px] bg-gradient-to-br from-pink-500 to-fuchsia-600 p-5 text-left text-white shadow-[0_15px_30px_rgba(236,72,153,0.17)]"
             >
+
+              <div className="absolute -right-8 -top-8 h-28 w-28 rounded-full bg-white/10" />
 
               <div className="relative">
 
-                <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-white/10">
+                <div className="flex h-11 w-11 items-center justify-center rounded-[15px] bg-white/15">
 
                   <Utensils className="h-5 w-5" />
 
                 </div>
 
-                <p className="mt-5 text-sm font-bold">
-                  Subscription Plans
+                <p className="mt-6 text-[14px] font-black">
+                  Subscriptions
                 </p>
 
-                <p className="mt-1 text-[8px] text-white/60">
-                  Manage diet plans
+                <p className="mt-1 text-[8px] leading-4 text-white/65">
+                  Manage your meal plans
                 </p>
+
+                <ArrowUpRight className="absolute right-0 top-1 h-4 w-4 text-white/50" />
 
               </div>
 
@@ -807,28 +867,34 @@ export default function Dashboard() {
             {/* SUBSCRIBERS */}
 
             <motion.button
-              whileTap={{ scale: 0.97 }}
+              whileTap={{
+                scale: 0.96,
+              }}
               onClick={() =>
                 navigate("/app/subscribers")
               }
-              className="group relative overflow-hidden rounded-[1.7rem] bg-gradient-to-br from-[#0FAD6E] to-[#087F52] p-5 text-left text-white shadow-[0_12px_25px_rgba(15,173,110,0.15)]"
+              className="relative min-h-[160px] overflow-hidden rounded-[24px] bg-gradient-to-br from-emerald-500 to-teal-600 p-5 text-left text-white shadow-[0_15px_30px_rgba(16,185,129,0.17)]"
             >
+
+              <div className="absolute -right-8 -top-8 h-28 w-28 rounded-full bg-white/10" />
 
               <div className="relative">
 
-                <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-white/10">
+                <div className="flex h-11 w-11 items-center justify-center rounded-[15px] bg-white/15">
 
                   <Users className="h-5 w-5" />
 
                 </div>
 
-                <p className="mt-5 text-sm font-bold">
+                <p className="mt-6 text-[14px] font-black">
                   Subscribers
                 </p>
 
-                <p className="mt-1 text-[8px] text-white/60">
-                  Active customers
+                <p className="mt-1 text-[8px] leading-4 text-white/65">
+                  View active customers
                 </p>
+
+                <ArrowUpRight className="absolute right-0 top-1 h-4 w-4 text-white/50" />
 
               </div>
 
@@ -836,28 +902,37 @@ export default function Dashboard() {
 
           </div>
 
-        </div>
+        </section>
 
 
         {/* ===================================================
             ACTIVE ORDERS
         =================================================== */}
 
-        <div className="mt-8">
+        <section className="mt-9">
 
           <div className="mb-4 flex items-end justify-between">
 
             <div>
 
-              <p className="text-[8px] font-bold uppercase tracking-[0.16em] text-slate-400">
-                Kitchen Queue
-              </p>
+              <div className="flex items-center gap-2">
 
-              <h3 className="mt-1 text-lg font-bold text-slate-900">
+                <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-red-500" />
+
+                <p className="text-[8px] font-black uppercase tracking-[0.18em] text-slate-400">
+                  Live Kitchen
+                </p>
+
+              </div>
+
+              <h3 className="mt-1 text-[19px] font-black text-slate-900">
+
                 Active Orders
-                <span className="ml-2 rounded-full bg-orange-50 px-2 py-1 text-[8px] text-orange-500">
+
+                <span className="ml-2 rounded-full bg-orange-100 px-2.5 py-1 text-[8px] font-black text-orange-600">
                   {activeOrders.length}
                 </span>
+
               </h3>
 
             </div>
@@ -866,10 +941,10 @@ export default function Dashboard() {
               onClick={() =>
                 navigate("/orders")
               }
-              className="flex items-center gap-1 text-[9px] font-bold text-orange-500"
+              className="flex items-center gap-1 rounded-full bg-white px-3 py-2 text-[8px] font-black text-orange-500 shadow-sm"
             >
-              View all
-              <ChevronRight className="h-3.5 w-3.5" />
+              View All
+              <ChevronRight className="h-3 w-3" />
             </button>
 
           </div>
@@ -878,24 +953,28 @@ export default function Dashboard() {
           {activeOrders.length === 0 ? (
 
             <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              className="rounded-[1.8rem] border border-dashed border-slate-200 bg-white p-8 text-center"
+              initial={{
+                opacity: 0,
+              }}
+              animate={{
+                opacity: 1,
+              }}
+              className="rounded-[25px] border border-dashed border-slate-200 bg-white p-9 text-center"
             >
 
-              <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-emerald-50">
+              <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-[20px] bg-emerald-50">
 
-                <CheckCircle className="h-6 w-6 text-emerald-500" />
+                <CheckCircle className="h-7 w-7 text-emerald-500" />
 
               </div>
 
-              <h4 className="mt-4 text-sm font-bold text-slate-800">
-                Kitchen is clear
+              <h4 className="mt-4 text-sm font-black text-slate-800">
+                Kitchen is clear ✨
               </h4>
 
-              <p className="mt-1 text-[9px] text-slate-400">
+              <p className="mx-auto mt-1 max-w-xs text-[9px] leading-4 text-slate-400">
                 No active orders right now.
-                Enjoy the calm before the next rush.
+                Your next order will appear here.
               </p>
 
             </motion.div>
@@ -923,29 +1002,34 @@ export default function Dashboard() {
                         key={order.id}
                         initial={{
                           opacity: 0,
-                          x: 20,
+                          y: 15,
                         }}
                         animate={{
                           opacity: 1,
-                          x: 0,
+                          y: 0,
                         }}
                         transition={{
                           delay:
-                            index * 0.07,
+                            index * 0.08,
+                        }}
+                        whileTap={{
+                          scale: 0.985,
                         }}
                         onClick={() =>
                           navigate(
                             `/orders/${order.id}`
                           )
                         }
-                        className="w-full rounded-[1.7rem] border border-slate-100 bg-white p-4 text-left shadow-[0_7px_25px_rgba(20,20,30,0.04)]"
+                        className="w-full rounded-[24px] border border-slate-100 bg-white p-4 text-left shadow-[0_10px_30px_rgba(15,23,42,0.05)]"
                       >
 
                         <div className="flex items-center gap-3">
 
-                          <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-slate-50">
+                          <div className="relative flex h-12 w-12 shrink-0 items-center justify-center rounded-[16px] bg-orange-50">
 
-                            <StatusIcon className="h-5 w-5 text-slate-700" />
+                            <StatusIcon className="h-5 w-5 text-orange-500" />
+
+                            <span className="absolute -right-1 -top-1 h-3 w-3 rounded-full border-2 border-white bg-emerald-500" />
 
                           </div>
 
@@ -954,13 +1038,13 @@ export default function Dashboard() {
 
                             <div className="flex items-center justify-between gap-2">
 
-                              <p className="truncate text-xs font-bold text-slate-900">
+                              <p className="truncate text-xs font-black text-slate-900">
                                 {order.customer}
                               </p>
 
-                              <span className="shrink-0 text-sm font-bold text-orange-500">
+                              <p className="shrink-0 text-sm font-black text-orange-500">
                                 ₹{order.amount}
-                              </span>
+                              </p>
 
                             </div>
 
@@ -977,26 +1061,18 @@ export default function Dashboard() {
                         <div className="mt-3 flex items-center justify-between">
 
                           <span
-                            className={`flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[8px] font-bold ${getStatusStyle(
+                            className={`rounded-full border px-2.5 py-1 text-[8px] font-black ${getStatusStyle(
                               order.status
                             )}`}
                           >
-
-                            <span className="h-1.5 w-1.5 rounded-full bg-current" />
-
                             {getStatusLabel(
                               order.status
                             )}
-
                           </span>
 
-
-                          <span className="flex items-center gap-1 text-[8px] text-slate-400">
-
-                            Open order
-
-                            <ChevronRight className="h-3 w-3" />
-
+                          <span className="flex items-center gap-1 text-[8px] font-bold text-slate-400">
+                            Open
+                            <ArrowUpRight className="h-3 w-3" />
                           </span>
 
                         </div>
@@ -1011,36 +1087,133 @@ export default function Dashboard() {
 
           )}
 
-        </div>
+        </section>
 
 
         {/* ===================================================
-            CHEF MOTIVATION CARD
+            TOP DISHES
+        =================================================== */}
+
+        {topDishes.length > 0 && (
+
+          <section className="mt-9">
+
+            <div className="mb-4">
+
+              <p className="text-[8px] font-black uppercase tracking-[0.18em] text-slate-400">
+                Customer Favorites
+              </p>
+
+              <h3 className="mt-1 text-[19px] font-black text-slate-900">
+                Top Dishes
+              </h3>
+
+            </div>
+
+
+            <div className="space-y-2.5">
+
+              {topDishes
+                .slice(0, 3)
+                .map(
+                  (
+                    dish: any,
+                    index: number
+                  ) => (
+
+                    <motion.div
+                      key={
+                        dish.id ||
+                        dish.name ||
+                        index
+                      }
+                      initial={{
+                        opacity: 0,
+                        x: 15,
+                      }}
+                      animate={{
+                        opacity: 1,
+                        x: 0,
+                      }}
+                      transition={{
+                        delay:
+                          index * 0.07,
+                      }}
+                      className="flex items-center gap-3 rounded-[20px] border border-slate-100 bg-white p-3.5 shadow-[0_7px_22px_rgba(15,23,42,0.04)]"
+                    >
+
+                      <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-[15px] bg-gradient-to-br from-orange-50 to-amber-50">
+
+                        <Utensils className="h-4 w-4 text-orange-500" />
+
+                      </div>
+
+                      <div className="min-w-0 flex-1">
+
+                        <p className="truncate text-xs font-black text-slate-800">
+                          {dish.name ||
+                            dish.dish_name ||
+                            "Popular Dish"}
+                        </p>
+
+                        <p className="mt-1 text-[8px] text-slate-400">
+                          {dish.orders ||
+                            dish.total_orders ||
+                            0}{" "}
+                          orders
+                        </p>
+
+                      </div>
+
+                      <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-emerald-50">
+
+                        <TrendingUp className="h-4 w-4 text-emerald-500" />
+
+                      </div>
+
+                    </motion.div>
+
+                  )
+                )}
+
+            </div>
+
+          </section>
+
+        )}
+
+
+        {/* ===================================================
+            FOOTER CARD
         =================================================== */}
 
         <motion.div
-          initial={{ opacity: 0, y: 15 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="mt-5 rounded-[1.8rem] border border-orange-100 bg-orange-50 p-5"
+          initial={{
+            opacity: 0,
+          }}
+          animate={{
+            opacity: 1,
+          }}
+          className="mt-7 rounded-[24px] border border-orange-100 bg-gradient-to-br from-orange-50 via-amber-50 to-yellow-50 p-5"
         >
 
           <div className="flex items-start gap-3">
 
-            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-white shadow-sm">
+            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-[15px] bg-white shadow-sm">
 
-              <Utensils className="h-4 w-4 text-orange-500" />
+              <ChefHat className="h-5 w-5 text-orange-500" />
 
             </div>
 
             <div>
 
-              <p className="text-[10px] font-bold text-orange-800">
-                Keep the kitchen moving 🔥
+              <p className="text-[11px] font-black text-orange-900">
+                Cook. Serve. Grow. 🔥
               </p>
 
-              <p className="mt-1 text-[9px] leading-4 text-orange-700/60">
-                Great food creates happy customers.
-                Keep your menu fresh and your kitchen active.
+              <p className="mt-1 text-[9px] leading-4 text-orange-800/55">
+                Every great dish is another reason
+                for a customer to come back.
               </p>
 
             </div>
@@ -1049,11 +1222,12 @@ export default function Dashboard() {
 
         </motion.div>
 
-      </div>
+      </main>
 
 
       {/* =====================================================
           LOCATION MODAL
+          SAME API FLOW
       ===================================================== */}
 
       {showLocation && (
@@ -1210,4 +1384,3 @@ export default function Dashboard() {
     </div>
   );
 }
-
