@@ -441,1071 +441,313 @@ const handleImageChange = (file: File | null) => {
   
 
   return (
-  <div className="min-h-screen bg-[#FFF8F0] pb-24">
-
-    {/* ===================================================== */}
-    {/* HEADER */}
-    {/* ===================================================== */}
-
-    <div className="bg-gradient-to-br from-[#FF7A30] via-[#5F2EEA] to-[#0FAD6E] p-6 text-white">
-
-      <button
-        type="button"
-        onClick={() => navigate(-1)}
-        className="flex items-center text-sm font-medium"
-      >
-        <ArrowLeft className="mr-2" size={20} />
-        Back
-      </button>
-
-      <div className="mt-5">
-        <p className="text-white/80 text-sm">
-          Exclusive Chef Collection
-        </p>
-
-        <h1 className="text-3xl font-bold mt-1">
-          Tomorrow Specials
-        </h1>
-
-        <p className="text-white/80 text-sm mt-2">
-          Limited dishes prepared specially for tomorrow
-        </p>
-      </div>
-
-    </div>
-
-
-    {/* ===================================================== */}
-    {/* SPECIALS LIST */}
-    {/* ===================================================== */}
-
-    <div className="p-6">
-
-      <div className="flex items-center justify-between mb-5">
-
-        <div>
-          <h2 className="font-bold text-xl text-gray-900">
-            ⭐ Tomorrow Specials
-          </h2>
-
-
-  
-
-  <div className="flex items-center gap-2">
-  <button
-    type="button"
-    onClick={() => navigate("/app/special-history")}
-    className="text-xs font-bold bg-purple-100 text-purple-700 px-3 py-2 rounded-xl hover:bg-purple-200 transition"
-  >
-    📜 History
-  </button>
-
-  <span className="text-xs font-semibold bg-orange-100 text-orange-600 px-3 py-1.5 rounded-full">
-    {specials.length} Specials
-  </span>
-
-</div>
-
-
-
-
-          <p className="text-xs text-gray-500 mt-1">
-            Fresh • Limited • Chef Special
-          </p>
-        </div>
-
-       
-
-      </div>
-
-
-      {/* EMPTY STATE */}
-
-      {specials.length === 0 && (
-        <div className="bg-white rounded-3xl p-8 text-center shadow-sm border border-gray-100">
-
-          <div className="text-6xl mb-4">
-            🍽️
-          </div>
-
-          <h3 className="font-bold text-gray-900">
-            No Tomorrow Specials
-          </h3>
-
-          <p className="text-sm text-gray-500 mt-2">
-            Create your first special dish for tomorrow.
-          </p>
-
-        </div>
-      )}
-
-
-      {/* ===================================================== */}
-      {/* SPECIAL CARDS */}
-      {/* ===================================================== */}
-
-      <div className="space-y-6">
-
-        {specials.map((item) => {
-
-          const remaining =
-            item.remaining ??
-            Math.max(
-              0,
-              Number(item.max_plates || 0) -
-                Number(item.pre_orders || 0)
-            );
-
-          const maxPlates =
-            Number(item.max_plates || 0);
-
-          const hasDiscount =
-            Number(item.original_price || 0) >
-            Number(item.price || 0);
-
-          const discount =
-            getDiscountPercent(
-              item.original_price,
-              item.price
-            );
-
-          const countdown =
-            getCountdown(item);
-
-          const soldPercent =
-            maxPlates
-              ? Math.min(
-                  100,
-                  Math.max(
-                    0,
-                    ((maxPlates - remaining) /
-                      maxPlates) *
-                      100
-                  )
-                )
-              : 0;
-
-
-          return (
-            <div
-              key={item.id}
-              className="bg-white rounded-3xl shadow-md overflow-hidden border border-gray-100"
-            >
-
-              {/* ================================================= */}
-              {/* IMAGE */}
-              {/* ================================================= */}
-
-              <div className="relative">
-
-                {item.image_url ? (
-
-                  <img
-                    src={item.image_url}
-                    alt={item.dish_name}
-                    className="w-full h-60 object-cover"
-                  />
-
-                ) : (
-
-                  <div className="w-full h-60 bg-gradient-to-br from-orange-100 via-purple-100 to-green-100 flex items-center justify-center">
-                    <span className="text-7xl">
-                      🍱
-                    </span>
-                  </div>
-
-                )}
-
-
-                {/* FOOD TYPE */}
-
-                <div className="absolute top-4 left-4">
-
-                  <span
-                    className={`px-3 py-1.5 rounded-full text-xs font-bold shadow-sm ${
-                      item.food_type === "veg"
-                        ? "bg-green-100 text-green-700"
-                        : "bg-red-100 text-red-700"
-                    }`}
-                  >
-                    {item.food_type === "veg"
-                      ? "🌱 Veg"
-                      : "🍗 Non-Veg"}
-                  </span>
-
-                </div>
-
-
-                {/* PREMIUM BADGE */}
-
-                <div className="absolute top-4 left-1/2 -translate-x-1/2">
-
-                  <span className="bg-black/70 backdrop-blur-sm text-white px-3 py-1.5 rounded-full text-xs font-bold shadow">
-                    ✨ CHEF SPECIAL
-                  </span>
-
-                </div>
-
-
-                {/* DISCOUNT */}
-
-                {hasDiscount && (
-                  <div className="absolute top-4 right-4">
-
-                    <span className="bg-green-500 text-white px-3 py-1.5 rounded-full text-xs font-bold shadow">
-                      {discount}% OFF
-                    </span>
-
-                  </div>
-                )}
-
-
-                {/* LIMITED STOCK */}
-
-                {remaining > 0 && remaining <= 5 && (
-
-                  <div className="absolute bottom-4 left-4">
-
-                    <span className="bg-red-500 text-white px-3 py-1.5 rounded-full text-xs font-bold shadow">
-                      🔥 Only {remaining} left
-                    </span>
-
-                  </div>
-
-                )}
-
-              </div>
-
-
-              {/* ================================================= */}
-              {/* CONTENT */}
-              {/* ================================================= */}
-
-              <div className="p-5">
-
-                {/* DISH NAME */}
-
-                <h3 className="text-2xl font-bold text-gray-900">
-  {item.dish_name}
-</h3>
-
-{item.special_date && (
-  <div className="flex flex-wrap items-center gap-3 mt-2">
-    <span className="text-xs font-semibold bg-purple-50 text-purple-700 px-3 py-1.5 rounded-full">
-      📅 Special Date: {item.special_date}
-    </span>
-
-    {item.cutoff_time && (
-      <span className="text-xs font-semibold bg-orange-50 text-orange-700 px-3 py-1.5 rounded-full">
-        ⏰ Order till {item.cutoff_time}
-      </span>
-    )}
-  </div>
-)}
-
-                {/* CHEF + RATING */}
-
-                <div className="flex items-center gap-2 mt-2">
-
-                  <p className="text-sm text-gray-500">
-                    👨‍🍳 {item.chef_name || "Chef"}
-                  </p>
-
-                  <span className="text-gray-300">
-                    •
-                  </span>
-
-                  <div className="flex items-center gap-1 text-sm">
-
-                    <Star
-                      size={15}
-                      className="fill-yellow-400 text-yellow-400"
-                    />
-
-                    <span className="font-semibold text-gray-700">
-                      {ratings[item.chef_id]?.avg_rating || 0}
-                    </span>
-
-                  </div>
-
-                </div>
-
-
-                {/* DESCRIPTION */}
-
-                {item.description && (
-
-                  <p className="text-sm text-gray-600 mt-4 leading-relaxed">
-                    {item.description}
-                  </p>
-
-                )}
-
-
-                {/* ================================================= */}
-                {/* COUNTDOWN */}
-                {/* ================================================= */}
-
-                <div
-                  className={`mt-4 rounded-2xl p-3 flex items-center justify-between ${
-                    countdown.expired
-                      ? "bg-gray-100 text-gray-500"
-                      : "bg-orange-50 text-orange-700"
-                  }`}
-                >
-
-                  <div className="flex items-center gap-2">
-
-                    <Clock3 size={17} />
-
-                    <span className="text-xs font-semibold">
-                      {countdown.expired
-                        ? "Ordering closed"
-                        : "Order window"}
-                    </span>
-
-                  </div>
-
-                  <span className="text-xs font-bold">
-                    {countdown.text}
-                  </span>
-
-                </div>
-
-
-                {/* ================================================= */}
-                {/* NUTRITION */}
-                {/* ================================================= */}
-
-                {(item.calories != null ||
-                  item.protein != null ||
-                  item.carbs != null ||
-                  item.fats != null) && (
-
-                  <div className="mt-5">
-
-                    <div className="flex items-center gap-2 mb-3">
-
-                      <Flame
-                        size={17}
-                        className="text-orange-500"
-                      />
-
-                      <h4 className="font-bold text-sm text-gray-800">
-                        Nutrition
-                      </h4>
-
-                    </div>
-
-
-                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-
-                      {/* CALORIES */}
-
-                      {item.calories != null && (
-
-                        <div className="bg-orange-50 rounded-2xl p-3 text-center">
-
-                          <p className="text-sm font-bold text-orange-600">
-                            {item.calories}
-                          </p>
-
-                          <p className="text-[10px] text-gray-500 mt-1">
-                            kcal
-                          </p>
-
-                        </div>
-
-                      )}
-
-
-                      {/* PROTEIN */}
-
-                      {item.protein != null && (
-
-                        <div className="bg-green-50 rounded-2xl p-3 text-center">
-
-                          <p className="text-sm font-bold text-green-600">
-                            {item.protein}g
-                          </p>
-
-                          <p className="text-[10px] text-gray-500 mt-1">
-                            Protein
-                          </p>
-
-                        </div>
-
-                      )}
-
-
-                      {/* CARBS */}
-
-                      {item.carbs != null && (
-
-                        <div className="bg-blue-50 rounded-2xl p-3 text-center">
-
-                          <p className="text-sm font-bold text-blue-600">
-                            {item.carbs}g
-                          </p>
-
-                          <p className="text-[10px] text-gray-500 mt-1">
-                            Carbs
-                          </p>
-
-                        </div>
-
-                      )}
-
-
-                      {/* FATS */}
-
-                      {item.fats != null && (
-
-                        <div className="bg-purple-50 rounded-2xl p-3 text-center">
-
-                          <p className="text-sm font-bold text-purple-600">
-                            {item.fats}g
-                          </p>
-
-                          <p className="text-[10px] text-gray-500 mt-1">
-                            Fats
-                          </p>
-
-                        </div>
-
-                      )}
-
-                    </div>
-
-                  </div>
-
-                )}
-
-
-                {/* ================================================= */}
-                {/* PREPARATION */}
-                {/* ================================================= */}
-
-                {item.preparation_time != null && (
-
-                  <div className="flex items-center gap-2 mt-5 bg-gray-50 rounded-2xl p-3">
-
-                    <Timer
-                      size={18}
-                      className="text-orange-500"
-                    />
-
-                    <span className="text-sm text-gray-600">
-                      Preparation:
-                    </span>
-
-                    <strong className="text-sm text-gray-900">
-                      {item.preparation_time} min
-                    </strong>
-
-                  </div>
-
-                )}
-
-
-                {/* ================================================= */}
-                {/* INGREDIENTS */}
-                {/* ================================================= */}
-
-                {item.ingredients && (
-
-                  <div className="mt-5">
-
-                    <div className="flex items-center gap-2">
-
-                      <Leaf
-                        size={17}
-                        className="text-green-600"
-                      />
-
-                      <p className="text-sm font-bold text-gray-800">
-                        Ingredients
-                      </p>
-
-                    </div>
-
-                    <p className="text-xs text-gray-500 mt-2 leading-relaxed">
-                      {item.ingredients}
-                    </p>
-
-                  </div>
-
-                )}
-
-
-                {/* ================================================= */}
-                {/* PRICE + ORDER */}
-                {/* ================================================= */}
-
-                <div className="flex items-end justify-between gap-4 mt-6">
-
-                  {/* PRICE */}
-
-                  <div>
-
-                    {hasDiscount && (
-
-                      <p className="text-sm text-gray-400 line-through">
-                        ₹{item.original_price}
-                      </p>
-
-                    )}
-
-                    <div className="flex items-center gap-2 flex-wrap">
-
-                      <span className="text-3xl font-bold text-orange-500">
-                        ₹{item.price}
-                      </span>
-
-                      {hasDiscount && (
-
-                        <span className="text-xs bg-green-100 text-green-600 px-2 py-1 rounded-full font-semibold">
-                          Special Price
-                        </span>
-
-                      )}
-
-                    </div>
-
-                  </div>
-
-
-                  {/* PRE ORDER */}
-
-                  
-                <div
-  className={`px-5 py-3 rounded-2xl font-bold text-sm ${
-    remaining <= 0 || countdown.expired
-      ? "bg-gray-100 text-gray-500"
-      : "bg-green-50 text-green-700"
-  }`}
->
-  {countdown.expired
-    ? "Ordering Closed"
-    : remaining <= 0
-    ? "Sold Out"
-    : "Accepting Orders"}
-</div>
-
-                </div>
-
-                </div>
-
-            </div>
-          );
-        })}
-
-      </div>
-
-    </div>
-
-            {/* ================================================= */}
-            {/* INVENTORY */}
-            {/* ADD SPECIAL FORM */}
-    {/* ===================================================== */}
-
-
-
-    <form
-      onSubmit={handleCreate}
-      className="px-6 space-y-4"
-    >
-
-      {/* FORM HEADER */}
-
-      <div className="bg-gradient-to-br from-[#FF7A30] to-[#5F2EEA] text-white rounded-3xl p-6 shadow">
-
-        <p className="text-white/80 text-xs font-semibold">
-          CHEF DASHBOARD
-        </p>
-
-        <h2 className="text-2xl font-bold mt-1">
-          ➕ Create Tomorrow Special
-        </h2>
-
-        <p className="text-white/80 text-sm mt-2">
-          Add an exclusive premium dish for tomorrow
-        </p>
-
-      </div>
-
-
-      {/* ================================================= */}
-      {/* DISH DETAILS */}
-      {/* ================================================= */}
-
-      <div className="bg-white rounded-3xl p-5 shadow-sm space-y-4">
-
-        <h3 className="font-bold text-gray-900">
-          🍽️ Dish Details
-        </h3>
-
-        <Input
-          placeholder="Dish Name"
-          value={formData.dishName}
-          onChange={(e) =>
-            setField(
-              "dishName",
-              e.target.value
-            )
-          }
-          required
-        />
-
-        <Textarea
-          placeholder="Describe your special dish..."
-          value={formData.description}
-          onChange={(e) =>
-            setField(
-              "description",
-              e.target.value
-            )
-          }
-          className="min-h-[100px]"
-        />
-
-      </div>
-
-
-      <div className="bg-white rounded-3xl p-5 shadow-sm space-y-4">
-
-  <div>
-    <h3 className="font-bold text-gray-900">
-      📅 Special Date
-    </h3>
-
-    <p className="text-xs text-gray-500 mt-1">
-      Select the date for which customers can order this special.
-    </p>
-  </div>
-
-  <Input
-    type="date"
-    value={formData.specialDate}
-    min={(() => {
-  const tomorrow = new Date();
-  tomorrow.setDate(tomorrow.getDate() + 1);
-  return tomorrow.toISOString().split("T")[0];
-})()}
-    onChange={(e) =>
-      setField("specialDate", e.target.value)
-    }
-    required
-  />
-
-</div>
-
-
-      {/* ================================================= */}
-      {/* PRICING */}
-      {/* ================================================= */}
-
-      <div className="bg-white rounded-3xl p-5 shadow-sm space-y-4">
-
-        <div>
-
-          <h3 className="font-bold text-gray-900">
-            💰 Pricing
-          </h3>
-
-          <p className="text-xs text-gray-500 mt-1">
-            Set your special selling price and original price.
-          </p>
-
-        </div>
-
-
-        <Input
-          type="number"
-          min="1"
-          step="0.01"
-          placeholder="Special Price (₹)"
-          value={formData.price}
-          onChange={(e) =>
-            setField(
-              "price",
-              e.target.value
-            )
-          }
-          required
-        />
-
-
-        <Input
-          type="number"
-          min="1"
-          step="0.01"
-          placeholder="Original Price (₹)"
-          value={formData.originalPrice}
-          onChange={(e) =>
-            setField(
-              "originalPrice",
-              e.target.value
-            )
-          }
-        />
-
-
-        {formData.originalPrice &&
-          formData.price &&
-          Number(formData.originalPrice) >
-            Number(formData.price) && (
-
-          <div className="bg-green-50 text-green-700 rounded-xl p-3 text-xs font-semibold">
-
-            🎉 Customer saves ₹
-            {(
-              Number(formData.originalPrice) -
-              Number(formData.price)
-            ).toFixed(2)}
-
-            {" "}(
-            {getDiscountPercent(
-              formData.originalPrice,
-              formData.price
-            )}
-            % OFF)
-
-          </div>
-
-        )}
-
-      </div>
-
-
-      {/* ================================================= */}
-      {/* QUANTITY & TIMING */}
-      {/* ================================================= */}
-
-      <div className="bg-white rounded-3xl p-5 shadow-sm space-y-4">
-
-        <div>
-
-          <h3 className="font-bold text-gray-900">
-            📦 Availability & Timing
-          </h3>
-
-          <p className="text-xs text-gray-500 mt-1">
-            Control the number of plates and ordering cutoff.
-          </p>
-
-        </div>
-
-
-        <Input
-          type="number"
-          min="1"
-          placeholder="Maximum Plates"
-          value={formData.maxPlates}
-          onChange={(e) =>
-            setField(
-              "maxPlates",
-              e.target.value
-            )
-          }
-          required
-        />
-
-
-        <Input
-          type="time"
-          value={formData.cutoffTime}
-          onChange={(e) =>
-            setField(
-              "cutoffTime",
-              e.target.value
-            )
-          }
-          required
-        />
-
-
-        <div className="bg-orange-50 rounded-xl p-3 flex items-center gap-2 text-xs text-orange-700">
-
-          <Clock3 size={16} />
-
-          <span>
-            Customers can pre-order until this cutoff time.
-          </span>
-
-        </div>
-
-      </div>
-
-
-      {/* ================================================= */}
-      {/* NUTRITION */}
-      {/* ================================================= */}
-
-      <div className="bg-white rounded-3xl p-5 shadow-sm space-y-4">
-
-        <div>
-
-          <h3 className="font-bold text-gray-900">
-            🥗 Nutrition Information
-          </h3>
-
-          <p className="text-xs text-gray-500 mt-1">
-            Add nutritional information to make your special more premium.
-          </p>
-
-        </div>
-
-
-        <div className="grid grid-cols-2 gap-3">
-
-          <Input
-            type="number"
-            min="0"
-            placeholder="Calories (kcal)"
-            value={formData.calories}
-            onChange={(e) =>
-              setField(
-                "calories",
-                e.target.value
-              )
-            }
-          />
-
-
-          <Input
-            type="number"
-            min="0"
-            step="0.1"
-            placeholder="Protein (g)"
-            value={formData.protein}
-            onChange={(e) =>
-              setField(
-                "protein",
-                e.target.value
-              )
-            }
-          />
-
-
-          <Input
-            type="number"
-            min="0"
-            step="0.1"
-            placeholder="Carbs (g)"
-            value={formData.carbs}
-            onChange={(e) =>
-              setField(
-                "carbs",
-                e.target.value
-              )
-            }
-          />
-
-
-          <Input
-            type="number"
-            min="0"
-            step="0.1"
-            placeholder="Fats (g)"
-            value={formData.fats}
-            onChange={(e) =>
-              setField(
-                "fats",
-                e.target.value
-              )
-            }
-          />
-
-        </div>
-
-      </div>
-
-
-      {/* ================================================= */}
-      {/* PREPARATION & INGREDIENTS */}
-      {/* ================================================= */}
-
-      <div className="bg-white rounded-3xl p-5 shadow-sm space-y-4">
-
-        <h3 className="font-bold text-gray-900">
-          🍳 Preparation & Ingredients
-        </h3>
-
-
-        <Input
-          type="number"
-          min="0"
-          placeholder="Preparation Time (minutes)"
-          value={formData.preparationTime}
-          onChange={(e) =>
-            setField(
-              "preparationTime",
-              e.target.value
-            )
-          }
-        />
-
-
-        <Textarea
-          placeholder="Ingredients (e.g. Rice, Dal, Paneer, Tomato...)"
-          value={formData.ingredients}
-          onChange={(e) =>
-            setField(
-              "ingredients",
-              e.target.value
-            )
-          }
-          className="min-h-[110px]"
-        />
-
-      </div>
-
-
-      {/* ================================================= */}
-      {/* FOOD TYPE */}
-      {/* ================================================= */}
-
-      <div className="bg-white rounded-3xl p-5 shadow-sm space-y-3">
-
-        <h3 className="font-bold text-gray-900">
-          🌱 Food Type
-        </h3>
-
-
-        <select
-          value={formData.foodType}
-          onChange={(e) =>
-            setField(
-              "foodType",
-              e.target.value
-            )
-          }
-          className="w-full p-3 border border-gray-200 rounded-xl bg-white focus:outline-none focus:ring-2 focus:ring-orange-300"
-          required
-        >
-
-          <option value="">
-            Select Food Type
-          </option>
-
-          <option value="veg">
-            🌱 Veg
-          </option>
-
-          <option value="non-veg">
-            🍗 Non-Veg
-          </option>
-
-        </select>
-
-      </div>
-
-
-      {/* ================================================= */}
-      {/* IMAGE */}
-      {/* ================================================= */}
-
-      <div className="bg-white rounded-3xl p-5 shadow-sm space-y-4">
-
-        <div>
-
-          <h3 className="font-bold text-gray-900">
-            📸 Dish Image
-          </h3>
-
-          <p className="text-xs text-gray-500 mt-1">
-            Upload a clear image of your special dish.
-          </p>
-
-        </div>
-
-
-        {!previewUrl ? (
-
-          <label className="border-2 border-dashed border-gray-200 rounded-2xl p-7 flex flex-col items-center justify-center cursor-pointer hover:border-orange-300 transition">
-
-            <Upload
-              className="text-orange-500 mb-3"
-              size={30}
-            />
-
-            <span className="text-sm font-semibold text-gray-700">
-              Choose dish image
-            </span>
-
-            <span className="text-xs text-gray-400 mt-1">
-              JPG, PNG, WEBP • Max 5 MB
-            </span>
-
-
-            <Input
-              type="file"
-              accept="image/jpeg,image/png,image/webp"
-              className="hidden"
-              onChange={(e: any) =>
-                handleImageChange(
-                  e.target.files?.[0] || null
-                )
-              }
-            />
-
-          </label>
-
-        ) : (
-
-          <div className="relative overflow-hidden rounded-2xl">
-
-            <img
-              src={previewUrl}
-              alt="Dish preview"
-              className="w-full h-60 object-cover"
-            />
-
-
+    <div className="min-h-screen bg-[#f7f7f8] text-slate-900 pb-28">
+      {/* PREMIUM HERO */}
+      <section className="relative overflow-hidden bg-[#111114] text-white">
+        <div className="absolute -top-24 -right-16 h-64 w-64 rounded-full bg-orange-500/25 blur-3xl" />
+        <div className="absolute -bottom-28 -left-20 h-72 w-72 rounded-full bg-violet-600/20 blur-3xl" />
+        <div className="relative mx-auto max-w-7xl px-5 pb-10 pt-5 sm:px-8 lg:px-10">
+          <div className="flex items-center justify-between">
             <button
               type="button"
-              onClick={() =>
-                handleImageChange(null)
-              }
-              className="absolute top-3 right-3 bg-black/60 text-white p-2 rounded-full hover:bg-black/80 transition"
+              onClick={() => navigate(-1)}
+              className="inline-flex items-center gap-2 rounded-2xl border border-white/10 bg-white/10 px-4 py-2.5 text-sm font-semibold backdrop-blur-md transition hover:bg-white/15"
             >
-              <X size={17} />
+              <ArrowLeft size={18} />
+              Back
             </button>
-
-
-            <div className="absolute bottom-3 left-3 bg-black/60 text-white px-3 py-1.5 rounded-full text-xs">
-              ✓ Image selected
-            </div>
-
+            <button
+              type="button"
+              onClick={() => navigate("/app/special-history")}
+              className="inline-flex items-center gap-2 rounded-2xl border border-white/10 bg-white/10 px-4 py-2.5 text-sm font-semibold backdrop-blur-md transition hover:bg-white/15"
+            >
+              📜 <span className="hidden sm:inline">Special History</span>
+              <span className="sm:hidden">History</span>
+            </button>
           </div>
 
-        )}
+          <div className="mt-10 max-w-3xl">
+            <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-orange-300/20 bg-orange-400/10 px-3 py-1.5 text-xs font-bold uppercase tracking-[0.18em] text-orange-200">
+              <Flame size={14} /> Chef Special Studio
+            </div>
+            <h1 className="text-4xl font-black tracking-tight sm:text-5xl lg:text-6xl">
+              Tomorrow, served <span className="text-orange-400">differently.</span>
+            </h1>
+            <p className="mt-4 max-w-2xl text-sm leading-6 text-white/65 sm:text-base">
+              Create a limited-edition dish, set your availability, and make tomorrow&apos;s menu worth coming back for.
+            </p>
+          </div>
 
-      </div>
+          <div className="mt-8 grid gap-3 sm:grid-cols-3">
+            <div className="rounded-3xl border border-white/10 bg-white/[0.06] p-4 backdrop-blur-md">
+              <div className="flex items-center gap-3">
+                <div className="grid h-11 w-11 place-items-center rounded-2xl bg-orange-400/15 text-orange-300">
+                  <Clock3 size={20} />
+                </div>
+                <div>
+                  <p className="text-[11px] font-bold uppercase tracking-wider text-white/45">Live</p>
+                  <p className="text-sm font-bold">Countdown enabled</p>
+                </div>
+              </div>
+            </div>
+            <div className="rounded-3xl border border-white/10 bg-white/[0.06] p-4 backdrop-blur-md">
+              <div className="flex items-center gap-3">
+                <div className="grid h-11 w-11 place-items-center rounded-2xl bg-emerald-400/15 text-emerald-300">
+                  <Leaf size={20} />
+                </div>
+                <div>
+                  <p className="text-[11px] font-bold uppercase tracking-wider text-white/45">Smart</p>
+                  <p className="text-sm font-bold">Nutrition ready</p>
+                </div>
+              </div>
+            </div>
+            <div className="rounded-3xl border border-white/10 bg-white/[0.06] p-4 backdrop-blur-md">
+              <div className="flex items-center gap-3">
+                <div className="grid h-11 w-11 place-items-center rounded-2xl bg-violet-400/15 text-violet-300">
+                  <Star size={20} />
+                </div>
+                <div>
+                  <p className="text-[11px] font-bold uppercase tracking-wider text-white/45">Premium</p>
+                  <p className="text-sm font-bold">Chef-first presentation</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
 
+      <main className="mx-auto max-w-7xl px-5 py-7 sm:px-8 lg:px-10">
+        {/* EXISTING SPECIALS */}
+        <section>
+          <div className="mb-5 flex flex-wrap items-end justify-between gap-3">
+            <div>
+              <p className="text-xs font-black uppercase tracking-[0.18em] text-orange-500">Your collection</p>
+              <h2 className="mt-1 text-2xl font-black tracking-tight sm:text-3xl">Tomorrow Specials</h2>
+              <p className="mt-1 text-sm text-slate-500">Fresh drops, limited plates, chef-made.</p>
+            </div>
+            <div className="rounded-2xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-bold shadow-sm">
+              <span className="text-orange-500">{specials.length}</span> active specials
+            </div>
+          </div>
 
-      {/* ================================================= */}
-      {/* CREATE BUTTON */}
-      {/* ================================================= */}
+          {specials.length === 0 ? (
+            <div className="overflow-hidden rounded-[2rem] border border-slate-200 bg-white shadow-sm">
+              <div className="grid min-h-[330px] place-items-center px-6 py-12 text-center">
+                <div>
+                  <div className="mx-auto grid h-20 w-20 place-items-center rounded-3xl bg-orange-50 text-5xl shadow-inner">🍽️</div>
+                  <h3 className="mt-5 text-xl font-black">Your special board is empty</h3>
+                  <p className="mx-auto mt-2 max-w-md text-sm leading-6 text-slate-500">
+                    Create your first limited-edition dish below and give customers something special to pre-order.
+                  </p>
+                </div>
+              </div>
+            </div>
+          ) : (
+            <div className="grid gap-6 lg:grid-cols-2">
+              {specials.map((item) => {
+                const remaining = item.remaining ?? Math.max(0, Number(item.max_plates || 0) - Number(item.pre_orders || 0));
+                const maxPlates = Number(item.max_plates || 0);
+                const hasDiscount = Number(item.original_price || 0) > Number(item.price || 0);
+                const discount = getDiscountPercent(item.original_price, item.price);
+                const countdown = getCountdown(item);
+                const soldPercent = maxPlates
+                  ? Math.min(100, Math.max(0, ((maxPlates - remaining) / maxPlates) * 100))
+                  : 0;
 
-      <Button
-        type="submit"
-        disabled={creating}
-        className="w-full h-14 rounded-2xl text-base font-bold shadow-lg"
-      >
-        {creating
-          ? "Creating Special..."
-          : "✨ Create Tomorrow Special"}
-      </Button>
+                return (
+                  <article key={item.id} className="group overflow-hidden rounded-[2rem] border border-slate-200 bg-white shadow-sm transition duration-300 hover:-translate-y-1 hover:shadow-xl">
+                    <div className="relative h-72 overflow-hidden bg-slate-100">
+                      {item.image_url ? (
+                        <img src={item.image_url} alt={item.dish_name} className="h-full w-full object-cover transition duration-500 group-hover:scale-105" />
+                      ) : (
+                        <div className="flex h-full items-center justify-center bg-gradient-to-br from-orange-100 via-amber-50 to-violet-100 text-7xl">🍱</div>
+                      )}
+                      <div className="absolute inset-x-0 bottom-0 h-32 bg-gradient-to-t from-black/75 to-transparent" />
+                      <div className="absolute left-4 top-4 flex flex-wrap gap-2">
+                        <span className={`rounded-full px-3 py-1.5 text-xs font-black shadow-lg ${item.food_type === "veg" ? "bg-emerald-500 text-white" : "bg-red-500 text-white"}`}>
+                          {item.food_type === "veg" ? "🌱 Veg" : "🍗 Non-Veg"}
+                        </span>
+                        {hasDiscount && <span className="rounded-full bg-white px-3 py-1.5 text-xs font-black text-emerald-600 shadow-lg">{discount}% OFF</span>}
+                      </div>
+                      <div className="absolute bottom-4 left-4 right-4 flex items-end justify-between gap-3 text-white">
+                        <div>
+                          <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-white/65">Chef Special</p>
+                          <h3 className="mt-1 text-2xl font-black leading-tight">{item.dish_name}</h3>
+                        </div>
+                        <div className="shrink-0 rounded-2xl bg-black/45 px-3 py-2 text-right backdrop-blur-md">
+                          <p className="text-[10px] text-white/55">Rating</p>
+                          <div className="mt-0.5 flex items-center gap-1 font-black"><Star size={13} className="fill-yellow-400 text-yellow-400" /> {ratings[item.chef_id]?.avg_rating || 0}</div>
+                        </div>
+                      </div>
+                    </div>
 
+                    <div className="p-5 sm:p-6">
+                      <div className="flex flex-wrap gap-2">
+                        {item.special_date && <span className="rounded-xl bg-violet-50 px-3 py-2 text-xs font-bold text-violet-700">📅 {item.special_date}</span>}
+                        {item.cutoff_time && <span className="rounded-xl bg-orange-50 px-3 py-2 text-xs font-bold text-orange-700">⏰ Till {item.cutoff_time}</span>}
+                      </div>
 
-      {/* BOTTOM SPACE */}
+                      <div className="mt-4 flex items-center justify-between gap-3">
+                        <p className="text-sm font-semibold text-slate-500">👨‍🍳 {item.chef_name || "Chef"}</p>
+                        <div className={`inline-flex items-center gap-2 rounded-xl px-3 py-2 text-xs font-black ${countdown.expired ? "bg-slate-100 text-slate-500" : "bg-orange-50 text-orange-700"}`}>
+                          <Clock3 size={14} /> {countdown.text}
+                        </div>
+                      </div>
 
-      <div className="h-8" />
+                      {item.description && <p className="mt-4 text-sm leading-6 text-slate-500">{item.description}</p>}
 
-    </form>
+                      <div className="mt-5 rounded-2xl border border-slate-100 bg-slate-50 p-4">
+                        <div className="flex items-center justify-between text-xs font-bold">
+                          <span className="text-slate-500">Plate availability</span>
+                          <span className={remaining <= 5 ? "text-red-500" : "text-slate-800"}>{remaining} / {maxPlates} left</span>
+                        </div>
+                        <div className="mt-3 h-2 overflow-hidden rounded-full bg-slate-200">
+                          <div className="h-full rounded-full bg-gradient-to-r from-orange-400 to-orange-600 transition-all" style={{ width: `${soldPercent}%` }} />
+                        </div>
+                        {remaining > 0 && remaining <= 5 && <p className="mt-2 text-[11px] font-bold text-red-500">🔥 Only {remaining} plates remaining</p>}
+                      </div>
 
+                      {(item.calories != null || item.protein != null || item.carbs != null || item.fats != null) && (
+                        <div className="mt-5">
+                          <div className="mb-3 flex items-center gap-2 text-sm font-black"><Flame size={16} className="text-orange-500" /> Nutrition</div>
+                          <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+                            {item.calories != null && <div className="rounded-2xl bg-orange-50 p-3 text-center"><p className="font-black text-orange-600">{item.calories}</p><p className="mt-1 text-[10px] text-slate-500">kcal</p></div>}
+                            {item.protein != null && <div className="rounded-2xl bg-emerald-50 p-3 text-center"><p className="font-black text-emerald-600">{item.protein}g</p><p className="mt-1 text-[10px] text-slate-500">Protein</p></div>}
+                            {item.carbs != null && <div className="rounded-2xl bg-sky-50 p-3 text-center"><p className="font-black text-sky-600">{item.carbs}g</p><p className="mt-1 text-[10px] text-slate-500">Carbs</p></div>}
+                            {item.fats != null && <div className="rounded-2xl bg-violet-50 p-3 text-center"><p className="font-black text-violet-600">{item.fats}g</p><p className="mt-1 text-[10px] text-slate-500">Fats</p></div>}
+                          </div>
+                        </div>
+                      )}
+
+                      <div className="mt-5 flex items-end justify-between gap-4 border-t border-slate-100 pt-5">
+                        <div>
+                          {hasDiscount && <p className="text-sm text-slate-400 line-through">₹{item.original_price}</p>}
+                          <div className="flex items-center gap-2"><span className="text-3xl font-black text-slate-900">₹{item.price}</span>{hasDiscount && <span className="rounded-full bg-emerald-50 px-2.5 py-1 text-[10px] font-black text-emerald-600">SAVE ₹{(Number(item.original_price) - Number(item.price)).toFixed(0)}</span>}</div>
+                        </div>
+                        <div className={`rounded-2xl px-4 py-3 text-center text-xs font-black ${countdown.expired || remaining <= 0 ? "bg-slate-100 text-slate-500" : "bg-emerald-50 text-emerald-700"}`}>
+                          {countdown.expired ? "Ordering Closed" : remaining <= 0 ? "Sold Out" : "Accepting Orders"}
+                        </div>
+                      </div>
+                    </div>
+                  </article>
+                );
+              })}
+            </div>
+          )}
+        </section>
+
+        {/* CREATE STUDIO */}
+        <section className="mt-12">
+          <div className="mb-5">
+            <p className="text-xs font-black uppercase tracking-[0.18em] text-violet-500">Create something memorable</p>
+            <h2 className="mt-1 text-2xl font-black tracking-tight sm:text-3xl">Build tomorrow&apos;s signature dish</h2>
+            <p className="mt-1 text-sm text-slate-500">Everything customers need to decide in one beautiful card.</p>
+          </div>
+
+          <form onSubmit={handleCreate} className="grid gap-6 lg:grid-cols-[1.15fr_0.85fr]">
+            {/* LEFT */}
+            <div className="space-y-6">
+              <div className="rounded-[2rem] border border-slate-200 bg-white p-5 shadow-sm sm:p-7">
+                <div className="mb-5 flex items-center gap-4">
+                  <div className="grid h-12 w-12 place-items-center rounded-2xl bg-orange-100 text-2xl">🍽️</div>
+                  <div><h3 className="font-black">Dish identity</h3><p className="text-xs text-slate-500">Give your special a personality.</p></div>
+                </div>
+                <div className="space-y-4">
+                  <Input placeholder="Dish name — e.g. Royal Paneer Handi" value={formData.dishName} onChange={(e) => setField("dishName", e.target.value)} required className="h-12 rounded-2xl border-slate-200" />
+                  <Textarea placeholder="Tell customers what makes this dish special..." value={formData.description} onChange={(e) => setField("description", e.target.value)} className="min-h-[125px] rounded-2xl border-slate-200" />
+                </div>
+              </div>
+
+              <div className="grid gap-6 sm:grid-cols-2">
+                <div className="rounded-[2rem] border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
+                  <div className="mb-4 flex items-center gap-3"><div className="grid h-10 w-10 place-items-center rounded-xl bg-violet-100">📅</div><div><h3 className="font-black">Special date</h3><p className="text-[11px] text-slate-500">When customers order it</p></div></div>
+                  <Input type="date" value={formData.specialDate} min={(() => { const tomorrow = new Date(); tomorrow.setDate(tomorrow.getDate() + 1); return tomorrow.toISOString().split("T")[0]; })()} onChange={(e) => setField("specialDate", e.target.value)} required className="h-12 rounded-2xl border-slate-200" />
+                </div>
+
+                <div className="rounded-[2rem] border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
+                  <div className="mb-4 flex items-center gap-3"><div className="grid h-10 w-10 place-items-center rounded-xl bg-orange-100">⏰</div><div><h3 className="font-black">Order cutoff</h3><p className="text-[11px] text-slate-500">Close pre-orders at</p></div></div>
+                  <Input type="time" value={formData.cutoffTime} onChange={(e) => setField("cutoffTime", e.target.value)} required className="h-12 rounded-2xl border-slate-200" />
+                </div>
+              </div>
+
+              <div className="rounded-[2rem] border border-slate-200 bg-white p-5 shadow-sm sm:p-7">
+                <div className="mb-5 flex items-center gap-4"><div className="grid h-12 w-12 place-items-center rounded-2xl bg-emerald-100 text-xl">💰</div><div><h3 className="font-black">Pricing strategy</h3><p className="text-xs text-slate-500">Make the value obvious.</p></div></div>
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <div><label className="mb-2 block text-xs font-bold text-slate-500">SPECIAL PRICE</label><Input type="number" min="1" step="0.01" placeholder="₹ Selling price" value={formData.price} onChange={(e) => setField("price", e.target.value)} required className="h-12 rounded-2xl border-slate-200" /></div>
+                  <div><label className="mb-2 block text-xs font-bold text-slate-500">ORIGINAL PRICE</label><Input type="number" min="1" step="0.01" placeholder="₹ Original price" value={formData.originalPrice} onChange={(e) => setField("originalPrice", e.target.value)} className="h-12 rounded-2xl border-slate-200" /></div>
+                </div>
+                {formData.originalPrice && formData.price && Number(formData.originalPrice) > Number(formData.price) && <div className="mt-4 rounded-2xl bg-emerald-50 p-4 text-sm font-bold text-emerald-700">🎉 Customer saves ₹{(Number(formData.originalPrice) - Number(formData.price)).toFixed(2)} · {getDiscountPercent(formData.originalPrice, formData.price)}% OFF</div>}
+              </div>
+
+              <div className="rounded-[2rem] border border-slate-200 bg-white p-5 shadow-sm sm:p-7">
+                <div className="mb-5 flex items-center gap-4"><div className="grid h-12 w-12 place-items-center rounded-2xl bg-sky-100 text-xl">📦</div><div><h3 className="font-black">Availability</h3><p className="text-xs text-slate-500">Create healthy scarcity.</p></div></div>
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <div><label className="mb-2 block text-xs font-bold text-slate-500">MAXIMUM PLATES</label><Input type="number" min="1" placeholder="e.g. 30" value={formData.maxPlates} onChange={(e) => setField("maxPlates", e.target.value)} required className="h-12 rounded-2xl border-slate-200" /></div>
+                  <div className="rounded-2xl bg-slate-50 p-4"><div className="flex items-center gap-2 text-xs font-bold text-slate-600"><Clock3 size={15} className="text-orange-500" /> Order window</div><p className="mt-2 text-xs leading-5 text-slate-500">Customers can pre-order until your cutoff time.</p></div>
+                </div>
+              </div>
+
+              <div className="rounded-[2rem] border border-slate-200 bg-white p-5 shadow-sm sm:p-7">
+                <div className="mb-5 flex items-center gap-4"><div className="grid h-12 w-12 place-items-center rounded-2xl bg-rose-100 text-xl">🥗</div><div><h3 className="font-black">Nutrition snapshot</h3><p className="text-xs text-slate-500">Optional, but adds trust.</p></div></div>
+                <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+                  <Input type="number" min="0" placeholder="Calories" value={formData.calories} onChange={(e) => setField("calories", e.target.value)} className="h-12 rounded-2xl border-slate-200" />
+                  <Input type="number" min="0" step="0.1" placeholder="Protein g" value={formData.protein} onChange={(e) => setField("protein", e.target.value)} className="h-12 rounded-2xl border-slate-200" />
+                  <Input type="number" min="0" step="0.1" placeholder="Carbs g" value={formData.carbs} onChange={(e) => setField("carbs", e.target.value)} className="h-12 rounded-2xl border-slate-200" />
+                  <Input type="number" min="0" step="0.1" placeholder="Fats g" value={formData.fats} onChange={(e) => setField("fats", e.target.value)} className="h-12 rounded-2xl border-slate-200" />
+                </div>
+              </div>
+
+              <div className="rounded-[2rem] border border-slate-200 bg-white p-5 shadow-sm sm:p-7">
+                <div className="mb-5 flex items-center gap-4"><div className="grid h-12 w-12 place-items-center rounded-2xl bg-amber-100 text-xl">🍳</div><div><h3 className="font-black">Kitchen details</h3><p className="text-xs text-slate-500">Help customers understand the craft.</p></div></div>
+                <div className="space-y-4">
+                  <Input type="number" min="0" placeholder="Preparation time (minutes)" value={formData.preparationTime} onChange={(e) => setField("preparationTime", e.target.value)} className="h-12 rounded-2xl border-slate-200" />
+                  <Textarea placeholder="Ingredients — Rice, Dal, Paneer, Tomato..." value={formData.ingredients} onChange={(e) => setField("ingredients", e.target.value)} className="min-h-[115px] rounded-2xl border-slate-200" />
+                </div>
+              </div>
+            </div>
+
+            {/* RIGHT */}
+            <div className="space-y-6 lg:sticky lg:top-5 lg:self-start">
+              <div className="overflow-hidden rounded-[2rem] border border-slate-200 bg-white shadow-sm">
+                <div className="border-b border-slate-100 p-5 sm:p-6"><p className="text-xs font-black uppercase tracking-[0.18em] text-slate-400">Visual identity</p><h3 className="mt-1 text-xl font-black">Make them hungry first.</h3></div>
+                {!previewUrl ? (
+                  <label className="m-5 flex min-h-[330px] cursor-pointer flex-col items-center justify-center rounded-[1.5rem] border-2 border-dashed border-slate-200 bg-slate-50 p-8 text-center transition hover:border-orange-300 hover:bg-orange-50/40 sm:m-6">
+                    <div className="grid h-16 w-16 place-items-center rounded-2xl bg-orange-100 text-orange-500"><Upload size={28} /></div>
+                    <p className="mt-5 font-black">Upload dish hero image</p>
+                    <p className="mt-2 max-w-xs text-xs leading-5 text-slate-500">Use a bright, appetizing photo. JPG, PNG or WEBP · Max 5 MB.</p>
+                    <span className="mt-5 rounded-xl bg-slate-900 px-4 py-2.5 text-xs font-bold text-white">Choose image</span>
+                    <Input type="file" accept="image/jpeg,image/png,image/webp" className="hidden" onChange={(e: any) => handleImageChange(e.target.files?.[0] || null)} />
+                  </label>
+                ) : (
+                  <div className="relative m-5 overflow-hidden rounded-[1.5rem] sm:m-6">
+                    <img src={previewUrl} alt="Dish preview" className="h-[330px] w-full object-cover" />
+                    <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/70 to-transparent p-5 pt-16 text-white"><p className="text-xs font-bold">✓ Image selected</p><p className="mt-1 text-lg font-black">Your dish is ready to shine.</p></div>
+                    <button type="button" onClick={() => handleImageChange(null)} className="absolute right-3 top-3 grid h-10 w-10 place-items-center rounded-full bg-black/60 text-white backdrop-blur-sm transition hover:bg-black/80"><X size={18} /></button>
+                  </div>
+                )}
+              </div>
+
+              <div className="rounded-[2rem] border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
+                <div className="mb-4 flex items-center justify-between"><div><p className="text-xs font-black uppercase tracking-[0.18em] text-slate-400">Food identity</p><h3 className="mt-1 font-black">Choose your style</h3></div><Leaf size={19} className="text-emerald-500" /></div>
+                <div className="grid grid-cols-2 gap-3">
+                  <button type="button" onClick={() => setField("foodType", "veg")} className={`rounded-2xl border-2 p-4 text-left transition ${formData.foodType === "veg" ? "border-emerald-500 bg-emerald-50" : "border-slate-100 bg-slate-50 hover:border-emerald-200"}`}><span className="text-xl">🌱</span><p className="mt-2 text-sm font-black">Vegetarian</p><p className="mt-1 text-[10px] text-slate-500">Fresh & green</p></button>
+                  <button type="button" onClick={() => setField("foodType", "non-veg")} className={`rounded-2xl border-2 p-4 text-left transition ${formData.foodType === "non-veg" ? "border-red-500 bg-red-50" : "border-slate-100 bg-slate-50 hover:border-red-200"}`}><span className="text-xl">🍗</span><p className="mt-2 text-sm font-black">Non-Veg</p><p className="mt-1 text-[10px] text-slate-500">Rich & hearty</p></button>
+                </div>
+                {!formData.foodType && <p className="mt-3 text-[11px] font-semibold text-red-500">Select a food type before publishing.</p>}
+              </div>
+
+              <div className="overflow-hidden rounded-[2rem] bg-[#111114] p-6 text-white shadow-xl sm:p-7">
+                <p className="text-xs font-black uppercase tracking-[0.18em] text-orange-300">Ready to launch?</p>
+                <h3 className="mt-2 text-2xl font-black">Publish your special.</h3>
+                <p className="mt-2 text-sm leading-6 text-white/55">Your dish will be sent with the same secure Tomorrow Special flow already connected to your backend.</p>
+                <Button type="submit" disabled={creating} className="mt-6 h-14 w-full rounded-2xl bg-orange-500 text-base font-black text-white shadow-lg shadow-orange-500/20 hover:bg-orange-600">
+                  {creating ? "Creating Special..." : "✨ Create Tomorrow Special"}
+                </Button>
+              </div>
+            </div>
+          </form>
+        </section>
+      </main>
     </div>
-);
+  );
 }
