@@ -12,7 +12,7 @@ import {
   User,
 } from "lucide-react";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef } from "react";
 import axios from "axios";
 
 const API = "https://chef-backend-qh12.onrender.com";
@@ -21,16 +21,16 @@ export default function MainLayout() {
   const location = useLocation();
   const navigate = useNavigate();
 
-  const [authChecking, setAuthChecking] = useState(true);
-
-  const refreshPromiseRef = useRef<Promise<string | null> | null>(null);
+  const refreshPromiseRef =
+    useRef<Promise<string | null> | null>(null);
 
   // =========================================================
   // REFRESH CHEF ACCESS TOKEN
   // =========================================================
 
   const refreshChefToken = async (): Promise<string | null> => {
-    const refreshToken = localStorage.getItem("refresh_token");
+    const refreshToken =
+      localStorage.getItem("refresh_token");
 
     if (!refreshToken) {
       return null;
@@ -49,16 +49,20 @@ export default function MainLayout() {
         }
       );
 
-      const newAccessToken = response.data?.access_token;
+      const newAccessToken =
+        response.data?.access_token;
 
       if (!newAccessToken) {
         return null;
       }
 
       // Save new access token
-      localStorage.setItem("token", newAccessToken);
+      localStorage.setItem(
+        "token",
+        newAccessToken
+      );
 
-      // Save rotated refresh token if backend sends it
+      // Save rotated refresh token if backend sends one
       if (response.data?.refresh_token) {
         localStorage.setItem(
           "refresh_token",
@@ -68,7 +72,11 @@ export default function MainLayout() {
 
       return newAccessToken;
     } catch (error) {
-      console.error("CHEF TOKEN REFRESH FAILED:", error);
+      console.error(
+        "CHEF TOKEN REFRESH FAILED:",
+        error
+      );
+
       return null;
     }
   };
@@ -80,16 +88,18 @@ export default function MainLayout() {
 
   const getFreshToken = async (): Promise<string | null> => {
     if (!refreshPromiseRef.current) {
-      refreshPromiseRef.current = refreshChefToken().finally(() => {
-        refreshPromiseRef.current = null;
-      });
+      refreshPromiseRef.current =
+        refreshChefToken().finally(() => {
+          refreshPromiseRef.current = null;
+        });
     }
 
     return refreshPromiseRef.current;
   };
 
   // =========================================================
-  // LOGOUT / SESSION EXPIRED
+  // SESSION EXPIRED
+  // Only called when refresh token also fails
   // =========================================================
 
   const handleSessionExpired = () => {
@@ -97,170 +107,106 @@ export default function MainLayout() {
     localStorage.removeItem("refresh_token");
     localStorage.removeItem("user_id");
 
-    // Do not show technical "Token expired" message.
+    // No technical "Token expired" message
     navigate("/auth/login", {
       replace: true,
     });
   };
 
   // =========================================================
-  // INITIAL AUTH CHECK
+  // GLOBAL AXIOS INTERCEPTOR
+  //
+  // 401
+  //   ↓
+  // Refresh token
+  //   ↓
+  // New access token
+  //   ↓
+  // Retry original request
   // =========================================================
 
   useEffect(() => {
-    let mounted = true;
+    const responseInterceptor =
+      axios.interceptors.response.use(
+        (response) => {
+          return response;
+        },
 
-    const checkAuth = async () => {
-      const token = localStorage.getItem("token");
+        async (error) => {
+          const originalRequest =
+            error.config;
 
-      if (!token) {
-        if (mounted) {
-          setAuthChecking(false);
-        }
-        return;
-      }
-
-      try {
-        const response = await axios.get(
-          `${API}/users/me`,
-          {
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
+          // No response from server
+          if (!error.response) {
+            return Promise.reject(error);
           }
-        );
 
-        if (response.status === 200) {
-          if (mounted) {
-            setAuthChecking(false);
+          // Only handle 401
+          if (error.response.status !== 401) {
+            return Promise.reject(error);
           }
-          return;
-        }
-      } catch (error: any) {
-        // =====================================================
-        // ACCESS TOKEN EXPIRED
-        // =====================================================
 
-        if (error.response?.status === 401) {
-          const newToken = await getFreshToken();
+          // Never intercept refresh endpoint itself
+          if (
+            originalRequest?.url?.includes(
+              "/auth/refresh"
+            )
+          ) {
+            handleSessionExpired();
 
-          if (newToken) {
-            try {
-              const verifyResponse = await axios.get(
-                `${API}/users/me`,
-                {
-                  headers: {
-                    Authorization: `Bearer ${newToken}`,
-                  },
-                }
-              );
+            return Promise.reject(error);
+          }
 
-              if (verifyResponse.status === 200) {
-                if (mounted) {
-                  setAuthChecking(false);
-                }
-                return;
-              }
-            } catch (verifyError) {
-              console.error(
-                "NEW CHEF TOKEN VERIFICATION FAILED:",
-                verifyError
+          // Prevent infinite retry loop
+          if (
+            (originalRequest as any)?._retry
+          ) {
+            handleSessionExpired();
+
+            return Promise.reject(error);
+          }
+
+          (originalRequest as any)._retry = true;
+
+          try {
+            const newToken =
+              await getFreshToken();
+
+            // Refresh token failed
+            if (!newToken) {
+              handleSessionExpired();
+
+              return Promise.reject(
+                new Error(
+                  "Please login again."
+                )
               );
             }
-          }
 
-          // Refresh token also invalid
-          handleSessionExpired();
-          return;
-        }
+            // Update Authorization header
+            originalRequest.headers = {
+              ...(originalRequest.headers || {}),
+              Authorization: `Bearer ${newToken}`,
+            };
 
-        console.error("CHEF AUTH CHECK ERROR:", error);
-      }
+            // Retry original request
+            return axios(originalRequest);
+          } catch (refreshError) {
+            console.error(
+              "CHEF AUTO REFRESH ERROR:",
+              refreshError
+            );
 
-      if (mounted) {
-        setAuthChecking(false);
-      }
-    };
-
-    checkAuth();
-
-    return () => {
-      mounted = false;
-    };
-  }, []);
-
-  // =========================================================
-  // GLOBAL AXIOS INTERCEPTOR
-  // 401 → REFRESH → RETRY ORIGINAL REQUEST
-  // =========================================================
-
-  useEffect(() => {
-    const responseInterceptor = axios.interceptors.response.use(
-      (response) => {
-        return response;
-      },
-
-      async (error) => {
-        const originalRequest = error.config;
-
-        if (!error.response) {
-          return Promise.reject(error);
-        }
-
-        // Only handle 401
-        if (error.response.status !== 401) {
-          return Promise.reject(error);
-        }
-
-        // Never intercept refresh request itself
-        if (
-          originalRequest?.url?.includes("/auth/refresh")
-        ) {
-          handleSessionExpired();
-          return Promise.reject(error);
-        }
-
-        // Prevent infinite retry loop
-        if (originalRequest?._retry) {
-          handleSessionExpired();
-          return Promise.reject(error);
-        }
-
-        originalRequest._retry = true;
-
-        try {
-          const newToken = await getFreshToken();
-
-          if (!newToken) {
             handleSessionExpired();
 
             return Promise.reject(
-              new Error("Please login again.")
+              new Error(
+                "Please login again."
+              )
             );
           }
-
-          // Update Authorization header
-          originalRequest.headers = {
-            ...(originalRequest.headers || {}),
-            Authorization: `Bearer ${newToken}`,
-          };
-
-          // Retry original request
-          return axios(originalRequest);
-        } catch (refreshError) {
-          console.error(
-            "CHEF AUTO REFRESH ERROR:",
-            refreshError
-          );
-
-          handleSessionExpired();
-
-          return Promise.reject(
-            new Error("Please login again.")
-          );
         }
-      }
-    );
+      );
 
     return () => {
       axios.interceptors.response.eject(
@@ -271,7 +217,14 @@ export default function MainLayout() {
 
   // =========================================================
   // GLOBAL FETCH INTERCEPTOR
-  // For pages/components using fetch()
+  //
+  // For Chef pages/components using fetch()
+  //
+  // 401
+  //   ↓
+  // Refresh token
+  //   ↓
+  // Retry same request
   // =========================================================
 
   useEffect(() => {
@@ -294,16 +247,25 @@ export default function MainLayout() {
       const isLoginRequest =
         requestUrl.includes("/auth/login");
 
-      if (isRefreshRequest || isLoginRequest) {
-        return originalFetch(input, init);
+      // Never intercept login or refresh
+      if (
+        isRefreshRequest ||
+        isLoginRequest
+      ) {
+        return originalFetch(
+          input,
+          init
+        );
       }
 
-      let response = await originalFetch(
-        input,
-        init
-      );
+      // First request
+      const response =
+        await originalFetch(
+          input,
+          init
+        );
 
-      // Not unauthorized
+      // Everything except 401
       if (response.status !== 401) {
         return response;
       }
@@ -312,8 +274,10 @@ export default function MainLayout() {
       // ACCESS TOKEN EXPIRED
       // =====================================================
 
-      const newToken = await getFreshToken();
+      const newToken =
+        await getFreshToken();
 
+      // Refresh failed
       if (!newToken) {
         handleSessionExpired();
 
@@ -324,29 +288,34 @@ export default function MainLayout() {
           {
             status: 401,
             headers: {
-              "Content-Type": "application/json",
+              "Content-Type":
+                "application/json",
             },
           }
         );
       }
 
       // =====================================================
-      // RETRY FETCH REQUEST
+      // RETRY ORIGINAL FETCH REQUEST
       // =====================================================
 
-      const retryHeaders = new Headers(
-        init?.headers || {}
-      );
+      const retryHeaders =
+        new Headers(
+          init?.headers || {}
+        );
 
       retryHeaders.set(
         "Authorization",
         `Bearer ${newToken}`
       );
 
-      return originalFetch(input, {
-        ...init,
-        headers: retryHeaders,
-      });
+      return originalFetch(
+        input,
+        {
+          ...init,
+          headers: retryHeaders,
+        }
+      );
     };
 
     window.fetch = wrappedFetch;
@@ -357,32 +326,21 @@ export default function MainLayout() {
   }, []);
 
   // =========================================================
-  // SHOW NOTHING WHILE AUTH IS BEING CHECKED
-  // Prevent protected page flash
-  // =========================================================
-
-  if (authChecking) {
-    return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="w-10 h-10 border-4 border-orange-200 border-t-orange-500 rounded-full animate-spin mx-auto mb-4" />
-
-          <p className="text-gray-500 text-sm">
-            Checking session...
-          </p>
-        </div>
-      </div>
-    );
-  }
-
-  // =========================================================
   // NORMAL TOKEN CHECK
+  //
+  // No "Checking session..." screen
   // =========================================================
 
-  const token = localStorage.getItem("token");
+  const token =
+    localStorage.getItem("token");
 
   if (!token) {
-    return <Navigate to="/auth/login" replace />;
+    return (
+      <Navigate
+        to="/auth/login"
+        replace
+      />
+    );
   }
 
   // =========================================================
@@ -418,10 +376,14 @@ export default function MainLayout() {
 
   const isActive = (path: string) => {
     if (path === "/app") {
-      return location.pathname === "/app";
+      return (
+        location.pathname === "/app"
+      );
     }
 
-    return location.pathname.includes(path);
+    return location.pathname.includes(
+      path
+    );
   };
 
   // =========================================================
@@ -438,7 +400,9 @@ export default function MainLayout() {
         <div className="max-w-md mx-auto flex justify-around items-center">
           {navItems.map((item) => {
             const Icon = item.icon;
-            const active = isActive(item.path);
+
+            const active =
+              isActive(item.path);
 
             return (
               <button
