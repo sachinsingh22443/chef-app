@@ -302,12 +302,18 @@ export default function Dashboard() {
             </div>
 
             <h1 className="mt-3 text-[32px] font-black leading-[1.05] tracking-[-1.5px] text-slate-900">
-              Good morning,
-              <br />
-              <span className="text-orange-500">
-                Chef 👨‍🍳
-              </span>
-            </h1>
+  {new Date().getHours() >= 5 && new Date().getHours() < 12
+    ? "Good morning,"
+    : new Date().getHours() >= 12 && new Date().getHours() < 17
+    ? "Good afternoon,"
+    : new Date().getHours() >= 17 && new Date().getHours() < 21
+    ? "Good evening,"
+    : "Good night,"}
+  <br />
+  <span className="text-orange-500">
+    Chef 👨‍🍳
+  </span>
+</h1>
 
             <p className="mt-3 max-w-xs text-[11px] leading-5 text-slate-500">
               Everything you need to run your
