@@ -18,6 +18,7 @@ import MenuCycle from "./pages/menu/MenuCycle";
 import AddMenuItem from "./pages/menu/AddMenuItem";
 import EditMenuItem from "./pages/menu/EditMenuItem";
 import TomorrowSpecial from "./pages/TomorrowSpecial";
+import SpecialHistory from "./pages/SpecialHistory";
 import SubscriptionOrders from "./pages/SubscriptionOrders";
 import Profile from "./pages/Profile";
 import EditProfile from "./pages/EditProfile";
@@ -82,6 +83,7 @@ export const router = createBrowserRouter([
       { path: "menu/edit/:itemId", element: <EditMenuItem /> },
 
       { path: "tomorrow-special", element: <TomorrowSpecial /> },
+      { path: "special-history", element: <SpecialHistory /> },
 
       { path: "subscriptions", element: <SubscriptionOrders /> },
 
