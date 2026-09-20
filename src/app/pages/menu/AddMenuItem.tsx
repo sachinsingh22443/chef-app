@@ -172,16 +172,18 @@ export default function AddMenuItem() {
   return (
     <>
       <style>{`
-        .menu-control {
-          width: 100%;
-          border: 1px solid rgb(226 232 240);
-          background: rgb(248 250 252);
-          border-radius: 1rem;
-          padding: .9rem 1rem;
-          font-size: .875rem;
-          outline: none;
-          transition: .2s ease;
-        }
+  .menu-control {
+  width: 100%;
+  box-sizing: border-box;
+  border: 1px solid rgb(226 232 240);
+  background: rgb(248 250 252);
+  border-radius: 1rem;
+  padding: .9rem 1rem;
+  font-size: .875rem;
+  line-height: 1.25rem;
+  outline: none;
+  transition: .2s ease;
+}
         .menu-control::placeholder { color: rgb(148 163 184); }
         .menu-control:focus {
           border-color: rgb(251 146 60);
@@ -364,21 +366,27 @@ export default function AddMenuItem() {
                     </Field>
 
                     <Field label="Prep time" required>
-                      <div className="relative">
-                        <Clock3 className="absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-orange-400" />
-                        <input
-                          type="number"
-                          min="0"
-                          className="menu-control pl-11 pr-14"
-                          placeholder="30"
-                          value={formData.prepTime}
-                          onChange={(e) => update("prepTime", e.target.value)}
-                          required
-                        />
-                        <span className="absolute right-4 top-1/2 -translate-y-1/2 text-xs font-bold text-slate-400">
-                          min
-                        </span>
-                      </div>
+                      <div className="relative w-full">
+  <Clock3 className="pointer-events-none absolute left-4 top-1/2 z-10 h-4 w-4 -translate-y-1/2 text-orange-400" />
+
+  <input
+    type="number"
+    min="0"
+    className="menu-control w-full"
+    style={{
+      paddingLeft: "3.5rem",
+      paddingRight: "4rem",
+    }}
+    placeholder="30"
+    value={formData.prepTime}
+    onChange={(e) => update("prepTime", e.target.value)}
+    required
+  />
+
+  <span className="pointer-events-none absolute right-4 top-1/2 z-10 -translate-y-1/2 text-xs font-bold text-slate-400">
+    min
+  </span>
+</div>
                     </Field>
 
                     <Field label="Available quantity" required className="sm:col-span-2">
@@ -830,19 +838,25 @@ function MoneyInput({
   onChange: (value: string) => void;
 }) {
   return (
-    <div className="relative">
-      <span className="absolute left-4 top-1/2 -translate-y-1/2 text-sm font-black text-orange-500">
+    <div className="relative w-full">
+      <span className="pointer-events-none absolute left-4 top-1/2 z-10 -translate-y-1/2 text-sm font-black text-orange-500">
         ₹
       </span>
+
       <input
         type="number"
         min="0"
-        className="menu-control pl-9 pr-14"
+        className="menu-control w-full"
+        style={{
+          paddingLeft: "3.5rem",
+          paddingRight: "4rem",
+        }}
         placeholder={placeholder}
         value={value}
         onChange={(e) => onChange(e.target.value)}
       />
-      <span className="absolute right-4 top-1/2 -translate-y-1/2 text-xs font-bold text-slate-400">
+
+      <span className="pointer-events-none absolute right-4 top-1/2 z-10 -translate-y-1/2 text-xs font-bold text-slate-400">
         INR
       </span>
     </div>
