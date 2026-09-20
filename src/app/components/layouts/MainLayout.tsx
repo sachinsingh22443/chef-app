@@ -12,7 +12,7 @@ import {
   User,
 } from "lucide-react";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import axios from "axios";
 
 const API = "https://chef-backend-qh12.onrender.com";
@@ -20,6 +20,8 @@ const API = "https://chef-backend-qh12.onrender.com";
 export default function MainLayout() {
   const location = useLocation();
   const navigate = useNavigate();
+
+  const [sessionChecking, setSessionChecking] = useState(true);
 
   const refreshPromiseRef =
     useRef<Promise<string | null> | null>(null);
@@ -81,6 +83,72 @@ export default function MainLayout() {
     }
   };
 
+
+
+  const checkAndRestoreSession = async () => {
+  const token = localStorage.getItem("token");
+
+  // No access token
+  if (!token) {
+    setSessionChecking(false);
+    navigate("/auth/login", { replace: true });
+    return;
+  }
+
+  try {
+    // First check current access token
+    const response = await axios.get(
+      `${API}/users/me`,
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      }
+    );
+
+    // Access token still valid
+    if (response.status === 200) {
+      setSessionChecking(false);
+      return;
+    }
+  } catch (error: any) {
+    // Access token expired/invalid
+    if (error?.response?.status !== 401) {
+      console.error("SESSION CHECK ERROR:", error);
+    }
+  }
+
+  // Access token failed → try refresh
+  try {
+    const newToken = await getFreshToken();
+
+    if (!newToken) {
+      throw new Error("Refresh token invalid");
+    }
+
+    // Verify newly refreshed access token
+    const verifyResponse = await axios.get(
+      `${API}/users/me`,
+      {
+        headers: {
+          Authorization: `Bearer ${newToken}`,
+        },
+      }
+    );
+
+    if (verifyResponse.status === 200) {
+      setSessionChecking(false);
+      return;
+    }
+
+    throw new Error("New access token invalid");
+  } catch (error) {
+    console.error("SESSION RESTORE FAILED:", error);
+
+    handleSessionExpired();
+  }
+};
+
   // =========================================================
   // SINGLE REFRESH REQUEST
   // Prevent multiple simultaneous refresh calls
@@ -96,6 +164,10 @@ export default function MainLayout() {
 
     return refreshPromiseRef.current;
   };
+
+  useEffect(() => {
+  checkAndRestoreSession();
+}, []);
 
   // =========================================================
   // SESSION EXPIRED
@@ -331,17 +403,18 @@ export default function MainLayout() {
   // No "Checking session..." screen
   // =========================================================
 
-  const token =
-    localStorage.getItem("token");
-
-  if (!token) {
-    return (
-      <Navigate
-        to="/auth/login"
-        replace
-      />
-    );
-  }
+  if (sessionChecking) {
+  return (
+    <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="text-center">
+        <div className="mx-auto h-10 w-10 animate-spin rounded-full border-4 border-orange-200 border-t-orange-500" />
+        <p className="mt-4 text-sm text-gray-500">
+          Restoring your session...
+        </p>
+      </div>
+    </div>
+  );
+}
 
   // =========================================================
   // BOTTOM NAVIGATION
