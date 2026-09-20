@@ -355,9 +355,10 @@ export default function EditMenuItem() {
       </header>
 
       <form
-        onSubmit={handleSubmit}
-        className="relative mx-auto grid max-w-6xl gap-6 px-4 py-6 sm:px-6 lg:grid-cols-[1fr_360px]"
-      >
+  id="edit-menu-form"
+  onSubmit={handleSubmit}
+  className="relative mx-auto grid max-w-6xl gap-6 px-4 py-6 pb-28 sm:px-6 lg:grid-cols-[1fr_360px]"
+>
         <main className="space-y-6">
           {/* Photos */}
           <section className="overflow-hidden rounded-[30px] border border-white/10 bg-white/[0.045] shadow-2xl">
@@ -948,62 +949,66 @@ export default function EditMenuItem() {
       </form>
 
       {/* Sticky save bar */}
-      <div className="fixed inset-x-0 bottom-0 z-50 border-t border-white/10 bg-[#07100d]/90 px-4 py-3 backdrop-blur-2xl">
-        <div className="mx-auto flex max-w-6xl items-center justify-between gap-4">
-          <div className="hidden min-w-0 sm:block">
-            <div className="flex items-center gap-2 text-sm font-semibold">
-              <span
-                className={`h-2 w-2 rounded-full ${
-                  completion >= 80 ? "bg-emerald-300" : "bg-orange-300"
-                }`}
-              />
-              {completion >= 80
-                ? "Your listing is looking great"
-                : "A few details still need attention"}
-            </div>
-            <p className="mt-0.5 truncate text-xs text-white/35">
-              Changes are saved only when you update the menu item.
-            </p>
-          </div>
+      {/* Sticky save bar */}
+<div className="fixed left-0 right-0 bottom-0 z-[9999] border-t border-white/10 bg-[#07100d]/95 px-4 py-3 backdrop-blur-2xl">
+  <div className="mx-auto flex w-full max-w-6xl items-center justify-between gap-4">
 
-          <div className="ml-auto flex w-full gap-2 sm:w-auto">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => navigate(-1)}
-              className="hidden h-12 border-white/10 bg-white/[0.04] px-5 text-white hover:bg-white/[0.08] sm:flex"
-            >
-              Cancel
-            </Button>
+    {/* Status text */}
+    <div className="hidden min-w-0 sm:block">
+      <div className="flex items-center gap-2 text-sm font-semibold">
+        <span
+          className={`h-2 w-2 rounded-full ${
+            completion >= 80 ? "bg-emerald-300" : "bg-orange-300"
+          }`}
+        />
 
-            <Button
-              type="submit"
-              form=""
-              disabled={saving}
-              onClick={() => {
-                const form = document.querySelector(
-                  "form"
-                ) as HTMLFormElement | null;
-                form?.requestSubmit();
-              }}
-              className="h-12 flex-1 rounded-xl bg-emerald-300 px-6 font-black text-[#06100c] shadow-lg shadow-emerald-300/10 hover:bg-emerald-200 sm:min-w-[210px] sm:flex-none"
-            >
-              {saving ? (
-                <>
-                  <span className="mr-2 h-4 w-4 animate-spin rounded-full border-2 border-[#06100c]/30 border-t-[#06100c]" />
-                  Updating…
-                </>
-              ) : (
-                <>
-                  <Save className="mr-2 h-4 w-4" />
-                  Update Menu Item
-                  <ChevronRight className="ml-1 h-4 w-4" />
-                </>
-              )}
-            </Button>
-          </div>
-        </div>
+        {completion >= 80
+          ? "Your listing is looking great"
+          : "A few details still need attention"}
       </div>
+
+      <p className="mt-0.5 truncate text-xs text-white/35">
+        Changes are saved only when you update the menu item.
+      </p>
+    </div>
+
+    {/* Buttons */}
+    <div className="ml-auto flex w-full gap-2 sm:w-auto">
+
+      {/* CANCEL — kept */}
+      <Button
+        type="button"
+        variant="outline"
+        onClick={() => navigate(-1)}
+        className="h-12 flex-1 border-white/10 bg-white/[0.04] px-5 text-white hover:bg-white/[0.08] sm:flex-none"
+      >
+        Cancel
+      </Button>
+
+      {/* UPDATE — kept */}
+      <Button
+        type="submit"
+        form="edit-menu-form"
+        disabled={saving}
+        className="h-12 flex-1 rounded-xl bg-emerald-300 px-6 font-black text-[#06100c] shadow-lg shadow-emerald-300/10 hover:bg-emerald-200 sm:min-w-[210px] sm:flex-none"
+      >
+        {saving ? (
+          <>
+            <span className="mr-2 h-4 w-4 animate-spin rounded-full border-2 border-[#06100c]/30 border-t-[#06100c]" />
+            Updating…
+          </>
+        ) : (
+          <>
+            <Save className="mr-2 h-4 w-4" />
+            Update Menu Item
+            <ChevronRight className="ml-1 h-4 w-4" />
+          </>
+        )}
+      </Button>
+
+    </div>
+  </div>
+</div>
     </div>
   );
 }
