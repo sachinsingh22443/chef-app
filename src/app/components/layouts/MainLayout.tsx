@@ -2,7 +2,6 @@ import {
   Outlet,
   useLocation,
   useNavigate,
-  Navigate,
 } from "react-router";
 
 import {
@@ -23,167 +22,314 @@ export default function MainLayout() {
 
   const [sessionChecking, setSessionChecking] = useState(true);
 
+  // =========================================================
+  // SINGLE REFRESH PROMISE
+  // =========================================================
+  // This prevents multiple API calls from refreshing the
+  // same refresh token at the same time.
+  //
+  // Very important because backend rotates refresh tokens.
+  // =========================================================
+
   const refreshPromiseRef =
     useRef<Promise<string | null> | null>(null);
+
+  // =========================================================
+  // SESSION EXPIRED
+  // =========================================================
+
+  const handleSessionExpired = () => {
+    console.log("❌ SESSION EXPIRED - LOGIN REQUIRED");
+
+    localStorage.removeItem("token");
+    localStorage.removeItem("refresh_token");
+    localStorage.removeItem("user_id");
+
+    navigate("/auth/login", {
+      replace: true,
+    });
+  };
 
   // =========================================================
   // REFRESH CHEF ACCESS TOKEN
   // =========================================================
 
   const refreshChefToken = async (): Promise<string | null> => {
+    // -------------------------------------------------------
+    // IMPORTANT:
+    // If another refresh request is already running,
+    // DO NOT create another refresh request.
+    // -------------------------------------------------------
+
+    if (refreshPromiseRef.current) {
+      console.log(
+        "⏳ Refresh already running. Waiting for existing refresh..."
+      );
+
+      return refreshPromiseRef.current;
+    }
+
     const refreshToken =
       localStorage.getItem("refresh_token");
 
+    // No refresh token
     if (!refreshToken) {
+      console.log(
+        "❌ No refresh token found"
+      );
+
       return null;
     }
 
-    try {
-      const response = await axios.post(
-        `${API}/auth/refresh`,
-        {
-          refresh_token: refreshToken,
-        },
-        {
-          headers: {
-            "Content-Type": "application/json",
-          },
-        }
-      );
+    // -------------------------------------------------------
+    // Create ONE refresh promise
+    // -------------------------------------------------------
 
-      const newAccessToken =
-        response.data?.access_token;
-
-      if (!newAccessToken) {
-        return null;
-      }
-
-      // Save new access token
-      localStorage.setItem(
-        "token",
-        newAccessToken
-      );
-
-      // Save rotated refresh token if backend sends one
-      if (response.data?.refresh_token) {
-        localStorage.setItem(
-          "refresh_token",
-          response.data.refresh_token
+    refreshPromiseRef.current = (async () => {
+      try {
+        console.log(
+          "🔄 Refreshing chef access token..."
         );
+
+        const response = await axios.post(
+          `${API}/auth/refresh`,
+          {
+            refresh_token: refreshToken,
+          },
+          {
+            headers: {
+              "Content-Type": "application/json",
+            },
+          }
+        );
+
+        const newAccessToken =
+          response.data?.access_token;
+
+        const newRefreshToken =
+          response.data?.refresh_token;
+
+        // ---------------------------------------------------
+        // Backend must return new access token
+        // ---------------------------------------------------
+
+        if (!newAccessToken) {
+          throw new Error(
+            "No access token received from refresh endpoint"
+          );
+        }
+
+        // ---------------------------------------------------
+        // SAVE NEW ACCESS TOKEN
+        // ---------------------------------------------------
+
+        localStorage.setItem(
+          "token",
+          newAccessToken
+        );
+
+        // ---------------------------------------------------
+        // SAVE ROTATED REFRESH TOKEN
+        // ---------------------------------------------------
+
+        if (newRefreshToken) {
+          localStorage.setItem(
+            "refresh_token",
+            newRefreshToken
+          );
+        }
+
+        console.log(
+          "✅ ACCESS TOKEN REFRESHED SUCCESSFULLY"
+        );
+
+        return newAccessToken;
+      } catch (error: any) {
+        console.error(
+          "❌ CHEF TOKEN REFRESH FAILED:",
+          error?.response?.data || error
+        );
+
+        return null;
+      } finally {
+        // ---------------------------------------------------
+        // IMPORTANT:
+        // Allow another refresh after this one finishes.
+        // ---------------------------------------------------
+
+        refreshPromiseRef.current = null;
       }
-
-      return newAccessToken;
-    } catch (error) {
-      console.error(
-        "CHEF TOKEN REFRESH FAILED:",
-        error
-      );
-
-      return null;
-    }
-  };
-
-
-
-  const checkAndRestoreSession = async () => {
-  const token = localStorage.getItem("token");
-
-  // No access token
-  if (!token) {
-    setSessionChecking(false);
-    navigate("/auth/login", { replace: true });
-    return;
-  }
-
-  try {
-    // First check current access token
-    const response = await axios.get(
-      `${API}/users/me`,
-      {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      }
-    );
-
-    // Access token still valid
-    if (response.status === 200) {
-      setSessionChecking(false);
-      return;
-    }
-  } catch (error: any) {
-    // Access token expired/invalid
-    if (error?.response?.status !== 401) {
-      console.error("SESSION CHECK ERROR:", error);
-    }
-  }
-
-  // Access token failed → try refresh
-  try {
-    const newToken = await getFreshToken();
-
-    if (!newToken) {
-      throw new Error("Refresh token invalid");
-    }
-
-    // Verify newly refreshed access token
-    const verifyResponse = await axios.get(
-      `${API}/users/me`,
-      {
-        headers: {
-          Authorization: `Bearer ${newToken}`,
-        },
-      }
-    );
-
-    if (verifyResponse.status === 200) {
-      setSessionChecking(false);
-      return;
-    }
-
-    throw new Error("New access token invalid");
-  } catch (error) {
-    console.error("SESSION RESTORE FAILED:", error);
-
-    handleSessionExpired();
-  }
-};
-
-  // =========================================================
-  // SINGLE REFRESH REQUEST
-  // Prevent multiple simultaneous refresh calls
-  // =========================================================
-
-  const getFreshToken = async (): Promise<string | null> => {
-    if (!refreshPromiseRef.current) {
-      refreshPromiseRef.current =
-        refreshChefToken().finally(() => {
-          refreshPromiseRef.current = null;
-        });
-    }
+    })();
 
     return refreshPromiseRef.current;
   };
 
-  useEffect(() => {
-  checkAndRestoreSession();
-}, []);
-
   // =========================================================
-  // SESSION EXPIRED
-  // Only called when refresh token also fails
+  // GET FRESH TOKEN
   // =========================================================
 
-  const handleSessionExpired = () => {
-    localStorage.removeItem("token");
-    localStorage.removeItem("refresh_token");
-    localStorage.removeItem("user_id");
-
-    // No technical "Token expired" message
-    navigate("/auth/login", {
-      replace: true,
-    });
+  const getFreshToken = async (): Promise<string | null> => {
+    return refreshChefToken();
   };
+
+  // =========================================================
+  // CHECK AND RESTORE SESSION
+  // =========================================================
+
+  const checkAndRestoreSession = async () => {
+    const token =
+      localStorage.getItem("token");
+
+    // -------------------------------------------------------
+    // No access token
+    // -------------------------------------------------------
+
+    if (!token) {
+      console.log(
+        "❌ No access token found"
+      );
+
+      setSessionChecking(false);
+
+      navigate("/auth/login", {
+        replace: true,
+      });
+
+      return;
+    }
+
+    // -------------------------------------------------------
+    // First check current access token
+    // -------------------------------------------------------
+
+    try {
+      console.log(
+        "🔍 Checking current chef session..."
+      );
+
+      const response = await axios.get(
+        `${API}/users/me`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      // -----------------------------------------------------
+      // Access token is valid
+      // -----------------------------------------------------
+
+      if (response.status === 200) {
+        console.log(
+          "✅ Existing access token is valid"
+        );
+
+        setSessionChecking(false);
+
+        return;
+      }
+    } catch (error: any) {
+      // -----------------------------------------------------
+      // Only 401 means token is invalid/expired.
+      // Other errors should NOT immediately logout.
+      // -----------------------------------------------------
+
+      if (
+        error?.response?.status !== 401
+      ) {
+        console.error(
+          "SESSION CHECK ERROR:",
+          error?.response?.data || error
+        );
+
+        setSessionChecking(false);
+
+        return;
+      }
+
+      console.log(
+        "⚠️ Access token expired/invalid. Trying refresh..."
+      );
+    }
+
+    // =======================================================
+    // ACCESS TOKEN FAILED
+    // TRY REFRESH TOKEN
+    // =======================================================
+
+    try {
+      const newToken =
+        await getFreshToken();
+
+      // -----------------------------------------------------
+      // Refresh token failed
+      // -----------------------------------------------------
+
+      if (!newToken) {
+        console.log(
+          "❌ Refresh token failed"
+        );
+
+        handleSessionExpired();
+
+        return;
+      }
+
+      // -----------------------------------------------------
+      // Verify newly refreshed access token
+      // -----------------------------------------------------
+
+      console.log(
+        "🔍 Verifying new access token..."
+      );
+
+      const verifyResponse =
+        await axios.get(
+          `${API}/users/me`,
+          {
+            headers: {
+              Authorization: `Bearer ${newToken}`,
+            },
+          }
+        );
+
+      // -----------------------------------------------------
+      // New token works
+      // -----------------------------------------------------
+
+      if (
+        verifyResponse.status === 200
+      ) {
+        console.log(
+          "✅ Session successfully restored"
+        );
+
+        setSessionChecking(false);
+
+        return;
+      }
+
+      throw new Error(
+        "New access token invalid"
+      );
+    } catch (error: any) {
+      console.error(
+        "❌ SESSION RESTORE FAILED:",
+        error?.response?.data || error
+      );
+
+      handleSessionExpired();
+    }
+  };
+
+  // =========================================================
+  // INITIAL SESSION CHECK
+  // =========================================================
+
+  useEffect(() => {
+    checkAndRestoreSession();
+  }, []);
 
   // =========================================================
   // GLOBAL AXIOS INTERCEPTOR
@@ -200,52 +346,92 @@ export default function MainLayout() {
   useEffect(() => {
     const responseInterceptor =
       axios.interceptors.response.use(
+        // ---------------------------------------------------
+        // Successful response
+        // ---------------------------------------------------
+
         (response) => {
           return response;
         },
+
+        // ---------------------------------------------------
+        // Error response
+        // ---------------------------------------------------
 
         async (error) => {
           const originalRequest =
             error.config;
 
-          // No response from server
+          // -------------------------------------------------
+          // No server response
+          // -------------------------------------------------
+
           if (!error.response) {
             return Promise.reject(error);
           }
 
+          // -------------------------------------------------
           // Only handle 401
-          if (error.response.status !== 401) {
+          // -------------------------------------------------
+
+          if (
+            error.response.status !== 401
+          ) {
             return Promise.reject(error);
           }
 
-          // Never intercept refresh endpoint itself
+          // -------------------------------------------------
+          // NEVER intercept refresh endpoint itself
+          // -------------------------------------------------
+
           if (
             originalRequest?.url?.includes(
               "/auth/refresh"
             )
           ) {
-            handleSessionExpired();
-
             return Promise.reject(error);
           }
 
+          // -------------------------------------------------
           // Prevent infinite retry loop
+          // -------------------------------------------------
+
           if (
             (originalRequest as any)?._retry
           ) {
+            console.log(
+              "❌ Request already retried and still returned 401"
+            );
+
             handleSessionExpired();
 
             return Promise.reject(error);
           }
 
-          (originalRequest as any)._retry = true;
+          // -------------------------------------------------
+          // Mark request as retried
+          // -------------------------------------------------
+
+          (originalRequest as any)._retry =
+            true;
 
           try {
+            console.log(
+              "⚠️ Axios 401 → refreshing token..."
+            );
+
             const newToken =
               await getFreshToken();
 
-            // Refresh token failed
+            // ------------------------------------------------
+            // Refresh failed
+            // ------------------------------------------------
+
             if (!newToken) {
+              console.log(
+                "❌ Axios refresh failed"
+              );
+
               handleSessionExpired();
 
               return Promise.reject(
@@ -255,17 +441,29 @@ export default function MainLayout() {
               );
             }
 
+            // ------------------------------------------------
             // Update Authorization header
+            // ------------------------------------------------
+
             originalRequest.headers = {
               ...(originalRequest.headers || {}),
               Authorization: `Bearer ${newToken}`,
             };
 
+            console.log(
+              "🔁 Retrying original Axios request..."
+            );
+
+            // ------------------------------------------------
             // Retry original request
-            return axios(originalRequest);
+            // ------------------------------------------------
+
+            return axios(
+              originalRequest
+            );
           } catch (refreshError) {
             console.error(
-              "CHEF AUTO REFRESH ERROR:",
+              "❌ CHEF AUTO REFRESH ERROR:",
               refreshError
             );
 
@@ -280,6 +478,10 @@ export default function MainLayout() {
         }
       );
 
+    // -------------------------------------------------------
+    // Cleanup interceptor
+    // -------------------------------------------------------
+
     return () => {
       axios.interceptors.response.eject(
         responseInterceptor
@@ -290,7 +492,7 @@ export default function MainLayout() {
   // =========================================================
   // GLOBAL FETCH INTERCEPTOR
   //
-  // For Chef pages/components using fetch()
+  // For pages/components using fetch()
   //
   // 401
   //   ↓
@@ -300,12 +502,17 @@ export default function MainLayout() {
   // =========================================================
 
   useEffect(() => {
-    const originalFetch = window.fetch;
+    const originalFetch =
+      window.fetch;
 
     const wrappedFetch = async (
       input: RequestInfo | URL,
       init?: RequestInit
     ): Promise<Response> => {
+      // -----------------------------------------------------
+      // Get request URL
+      // -----------------------------------------------------
+
       const requestUrl =
         typeof input === "string"
           ? input
@@ -313,13 +520,24 @@ export default function MainLayout() {
           ? input.toString()
           : input.url;
 
+      // -----------------------------------------------------
+      // Identify auth endpoints
+      // -----------------------------------------------------
+
       const isRefreshRequest =
-        requestUrl.includes("/auth/refresh");
+        requestUrl.includes(
+          "/auth/refresh"
+        );
 
       const isLoginRequest =
-        requestUrl.includes("/auth/login");
+        requestUrl.includes(
+          "/auth/login"
+        );
 
-      // Never intercept login or refresh
+      // -----------------------------------------------------
+      // NEVER intercept login or refresh requests
+      // -----------------------------------------------------
+
       if (
         isRefreshRequest ||
         isLoginRequest
@@ -330,15 +548,23 @@ export default function MainLayout() {
         );
       }
 
+      // -----------------------------------------------------
       // First request
+      // -----------------------------------------------------
+
       const response =
         await originalFetch(
           input,
           init
         );
 
+      // -----------------------------------------------------
       // Everything except 401
-      if (response.status !== 401) {
+      // -----------------------------------------------------
+
+      if (
+        response.status !== 401
+      ) {
         return response;
       }
 
@@ -346,16 +572,28 @@ export default function MainLayout() {
       // ACCESS TOKEN EXPIRED
       // =====================================================
 
+      console.log(
+        "⚠️ Fetch 401 → refreshing token..."
+      );
+
       const newToken =
         await getFreshToken();
 
+      // -----------------------------------------------------
       // Refresh failed
+      // -----------------------------------------------------
+
       if (!newToken) {
+        console.log(
+          "❌ Fetch refresh failed"
+        );
+
         handleSessionExpired();
 
         return new Response(
           JSON.stringify({
-            detail: "Please login again.",
+            detail:
+              "Please login again.",
           }),
           {
             status: 401,
@@ -381,6 +619,10 @@ export default function MainLayout() {
         `Bearer ${newToken}`
       );
 
+      console.log(
+        "🔁 Retrying original fetch request..."
+      );
+
       return originalFetch(
         input,
         {
@@ -390,29 +632,40 @@ export default function MainLayout() {
       );
     };
 
-    window.fetch = wrappedFetch;
+    // -------------------------------------------------------
+    // Replace global fetch
+    // -------------------------------------------------------
+
+    window.fetch =
+      wrappedFetch;
+
+    // -------------------------------------------------------
+    // Cleanup
+    // -------------------------------------------------------
 
     return () => {
-      window.fetch = originalFetch;
+      window.fetch =
+        originalFetch;
     };
   }, []);
 
   // =========================================================
-  // NORMAL TOKEN CHECK
-  //
-  // No "Checking session..." screen
+  // SESSION CHECKING SCREEN
   // =========================================================
 
-const token = localStorage.getItem("token");
+  if (sessionChecking) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="mx-auto h-10 w-10 animate-spin rounded-full border-4 border-orange-200 border-t-orange-500" />
 
-if (!token) {
-  return (
-    <Navigate
-      to="/auth/login"
-      replace
-    />
-  );
-}
+          <p className="mt-4 text-sm text-gray-500">
+            Restoring your session...
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   // =========================================================
   // BOTTOM NAVIGATION
@@ -445,7 +698,9 @@ if (!token) {
   // ACTIVE NAVIGATION
   // =========================================================
 
-  const isActive = (path: string) => {
+  const isActive = (
+    path: string
+  ) => {
     if (path === "/app") {
       return (
         location.pathname === "/app"
@@ -465,7 +720,9 @@ if (!token) {
     <div className="min-h-screen bg-gray-50 pb-20">
       <Outlet />
 
-      {/* Bottom Navigation */}
+      {/* ===================================================
+          BOTTOM NAVIGATION
+          =================================================== */}
 
       <div className="fixed bottom-0 left-0 right-0 bg-white border-t px-2 py-3 z-50">
         <div className="max-w-md mx-auto flex justify-around items-center">

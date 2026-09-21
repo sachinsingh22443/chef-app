@@ -110,10 +110,7 @@ export default function Dashboard() {
     } catch (err: any) {
       console.log("Dashboard Error:", err);
 
-      if (err.response?.status === 401) {
-        localStorage.removeItem("token");
-        navigate("/auth/login");
-      }
+      
     }
   };
 
@@ -1308,20 +1305,20 @@ export default function Dashboard() {
                       }
                     );
 
-                  if (
-                    res.status === 401
-                  ) {
+                  // if (
+                  //   res.status === 401
+                  // ) {
 
-                    localStorage.removeItem(
-                      "token"
-                    );
+                  //   localStorage.removeItem(
+                  //     "token"
+                  //   );
 
-                    navigate(
-                      "/auth/login"
-                    );
+                  //   navigate(
+                  //     "/auth/login"
+                  //   );
 
-                    return;
-                  }
+                  //   return;
+                  // }
 
                   if (!res.ok) {
 
