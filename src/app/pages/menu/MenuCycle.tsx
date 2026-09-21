@@ -29,11 +29,194 @@ const API = axios.create({
   baseURL: "https://chef-backend-qh12.onrender.com",
 });
 
+// =========================================================
+// MENU CYCLE AUTH
+// Automatically attach latest access token
+// =========================================================
+
 API.interceptors.request.use((config) => {
   const token = localStorage.getItem("token");
-  if (token) config.headers.Authorization = `Bearer ${token}`;
+
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`;
+  }
+
   return config;
 });
+
+// =========================================================
+// MENU CYCLE TOKEN REFRESH
+// =========================================================
+
+let refreshPromise: Promise<string | null> | null = null;
+
+const refreshMenuCycleToken = async (): Promise<string | null> => {
+  // If another request is already refreshing the token,
+  // wait for that same request.
+  if (refreshPromise) {
+    return refreshPromise;
+  }
+
+  const refreshToken =
+    localStorage.getItem("refresh_token");
+
+  if (!refreshToken) {
+    return null;
+  }
+
+  refreshPromise = (async () => {
+    try {
+      console.log(
+        "🔄 Menu Cycle: refreshing access token..."
+      );
+
+      const response = await axios.post(
+        "https://chef-backend-qh12.onrender.com/auth/refresh",
+        {
+          refresh_token: refreshToken,
+        },
+        {
+          headers: {
+            "Content-Type": "application/json",
+          },
+        }
+      );
+
+      const newAccessToken =
+        response.data?.access_token;
+
+      const newRefreshToken =
+        response.data?.refresh_token;
+
+      if (!newAccessToken) {
+        throw new Error(
+          "No access token received"
+        );
+      }
+
+      // Save new access token
+      localStorage.setItem(
+        "token",
+        newAccessToken
+      );
+
+      // Backend rotates refresh token
+      if (newRefreshToken) {
+        localStorage.setItem(
+          "refresh_token",
+          newRefreshToken
+        );
+      }
+
+      console.log(
+        "✅ Menu Cycle: token refreshed"
+      );
+
+      return newAccessToken;
+    } catch (error: any) {
+      console.error(
+        "❌ Menu Cycle token refresh failed:",
+        error?.response?.data || error
+      );
+
+      return null;
+    } finally {
+      refreshPromise = null;
+    }
+  })();
+
+  return refreshPromise;
+};
+
+// =========================================================
+// MENU CYCLE RESPONSE INTERCEPTOR
+//
+// 401
+// ↓
+// Refresh token
+// ↓
+// Save new token
+// ↓
+// Retry original request
+// =========================================================
+
+API.interceptors.response.use(
+  (response) => {
+    return response;
+  },
+
+  async (error) => {
+    const originalRequest = error.config;
+
+    // No response from server
+    if (!error.response) {
+      return Promise.reject(error);
+    }
+
+    // Only handle 401
+    if (error.response.status !== 401) {
+      return Promise.reject(error);
+    }
+
+    // Never intercept refresh request
+    if (
+      originalRequest?.url?.includes(
+        "/auth/refresh"
+      )
+    ) {
+      return Promise.reject(error);
+    }
+
+    // Prevent infinite retry loop
+    if (
+      originalRequest?._menuCycleRetry
+    ) {
+      console.error(
+        "❌ Menu Cycle request still returned 401 after refresh"
+      );
+
+      return Promise.reject(error);
+    }
+
+    originalRequest._menuCycleRetry = true;
+
+    try {
+      console.log(
+        "⚠️ Menu Cycle: 401 received"
+      );
+
+      const newToken =
+        await refreshMenuCycleToken();
+
+      if (!newToken) {
+        console.error(
+          "❌ Menu Cycle: unable to refresh token"
+        );
+
+        return Promise.reject(error);
+      }
+
+      // Update Authorization header
+      originalRequest.headers = {
+        ...(originalRequest.headers || {}),
+        Authorization: `Bearer ${newToken}`,
+      };
+
+      console.log(
+        "🔁 Menu Cycle: retrying original request"
+      );
+
+      return API(originalRequest);
+    } catch (refreshError) {
+      console.error(
+        "❌ Menu Cycle auto refresh error:",
+        refreshError
+      );
+
+      return Promise.reject(refreshError);
+    }
+  }
+);
 
 type MenuItem = {
   id: string;
