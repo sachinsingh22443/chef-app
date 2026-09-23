@@ -199,7 +199,7 @@ export default function EditProfile() {
         <div className="absolute right-0 top-1/2 h-96 w-96 rounded-full bg-amber-300/5 blur-[130px]" />
       </div>
 
-      <main className="relative mx-auto w-full max-w-6xl px-4 pb-28 pt-5 sm:px-6 lg:px-8">
+      <main className="relative mx-auto w-full max-w-6xl px-4 pb-36 pt-5 sm:px-6 sm:pb-32 lg:px-8">
         {/* Header */}
         <header className="mb-6 flex items-center justify-between gap-4">
           <div className="flex items-center gap-3">
@@ -473,43 +473,58 @@ export default function EditProfile() {
           </div>
 
           {/* Sticky save bar */}
-          <div className="fixed bottom-0 left-0 right-0 z-30 border-t border-white/10 bg-[#090909]/90 px-4 py-3 backdrop-blur-xl sm:px-6">
-            <div className="mx-auto flex w-full max-w-6xl items-center justify-between gap-4">
-              <div className="hidden items-center gap-2 sm:flex">
-                <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-emerald-400/10">
-                  <CheckCircle2 className="h-4 w-4 text-emerald-300" />
-                </div>
-                <div>
-                  <p className="text-xs font-semibold text-zinc-300">
-                    Ready to update
-                  </p>
-                  <p className="text-[10px] text-zinc-600">
-                    Your changes will be saved to your chef profile.
-                  </p>
-                </div>
-              </div>
+          {/* Sticky save bar */}
+<div
+  className="fixed left-0 right-0 z-[9999] border-t border-white/10 bg-[#090909]/95 px-4 pt-3 backdrop-blur-xl sm:px-6"
+  style={{
+    bottom: "0px",
+    paddingBottom: "max(12px, env(safe-area-inset-bottom))",
+  }}
+>
+  <div className="mx-auto flex w-full max-w-6xl items-center justify-between gap-4">
+    
+    {/* Desktop status */}
+    <div className="hidden items-center gap-2 sm:flex">
+      <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-emerald-400/10">
+        <CheckCircle2 className="h-4 w-4 text-emerald-300" />
+      </div>
 
-              <div className="ml-auto flex w-full gap-2 sm:w-auto">
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => navigate(-1)}
-                  className="flex-1 border-white/10 bg-white/[0.03] text-zinc-300 hover:bg-white/[0.07] hover:text-white sm:flex-none"
-                >
-                  Cancel
-                </Button>
+      <div>
+        <p className="text-xs font-semibold text-zinc-300">
+          Ready to update
+        </p>
 
-                <Button
-                  type="submit"
-                  disabled={loading}
-                  className="flex-1 bg-orange-500 font-bold text-white shadow-lg shadow-orange-950/30 hover:bg-orange-400 sm:min-w-[170px] sm:flex-none"
-                >
-                  <Save className="mr-2 h-4 w-4" />
-                  {loading ? "Updating..." : "Save changes"}
-                </Button>
-              </div>
-            </div>
-          </div>
+        <p className="text-[10px] text-zinc-600">
+          Your changes will be saved to your chef profile.
+        </p>
+      </div>
+    </div>
+
+    {/* Buttons */}
+    <div className="ml-auto flex w-full gap-2 sm:w-auto">
+      
+      <Button
+        type="button"
+        variant="outline"
+        onClick={() => navigate(-1)}
+        className="flex-1 border-white/10 bg-white/[0.03] text-zinc-300 hover:bg-white/[0.07] hover:text-white sm:flex-none"
+      >
+        Cancel
+      </Button>
+
+      <Button
+        type="submit"
+        disabled={loading}
+        className="flex-1 bg-orange-500 font-bold text-white shadow-lg shadow-orange-950/30 hover:bg-orange-400 sm:min-w-[170px] sm:flex-none"
+      >
+        <Save className="mr-2 h-4 w-4" />
+
+        {loading ? "Updating..." : "Save changes"}
+      </Button>
+
+    </div>
+  </div>
+</div>
         </form>
       </main>
     </div>

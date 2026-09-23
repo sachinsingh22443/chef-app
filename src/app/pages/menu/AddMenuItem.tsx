@@ -25,11 +25,123 @@ const API = axios.create({
   baseURL: "https://chef-backend-qh12.onrender.com",
 });
 
-API.interceptors.request.use((config) => {
-  const token = localStorage.getItem("token");
-  if (token) config.headers.Authorization = `Bearer ${token}`;
-  return config;
-});
+// ======================================================
+// TOKEN REFRESH
+// ======================================================
+
+let refreshPromise: Promise<string | null> | null = null;
+
+const refreshAccessToken = async (): Promise<string | null> => {
+  const refreshToken = localStorage.getItem("refresh_token");
+
+  if (!refreshToken) {
+    return null;
+  }
+
+  try {
+    const response = await axios.post(
+      "https://chef-backend-qh12.onrender.com/auth/refresh",
+      {
+        refresh_token: refreshToken,
+      }
+    );
+
+    const newAccessToken = response.data?.access_token;
+    const newRefreshToken = response.data?.refresh_token;
+
+    if (!newAccessToken) {
+      return null;
+    }
+
+    localStorage.setItem("token", newAccessToken);
+
+    // Refresh token rotation support
+    if (newRefreshToken) {
+      localStorage.setItem("refresh_token", newRefreshToken);
+    }
+
+    return newAccessToken;
+  } catch (error) {
+    console.error("TOKEN REFRESH FAILED:", error);
+    return null;
+  }
+};
+
+
+// ======================================================
+// REQUEST INTERCEPTOR
+// ======================================================
+
+API.interceptors.request.use(
+  (config) => {
+    const token = localStorage.getItem("token");
+
+    if (token) {
+      config.headers = config.headers || {};
+      config.headers.Authorization = `Bearer ${token}`;
+    }
+
+    return config;
+  },
+  (error) => Promise.reject(error)
+);
+
+
+// ======================================================
+// RESPONSE INTERCEPTOR
+// 401 -> REFRESH -> RETRY ORIGINAL REQUEST
+// ======================================================
+
+API.interceptors.response.use(
+  (response) => response,
+
+  async (error) => {
+    const originalRequest = error.config;
+
+    if (
+      error.response?.status !== 401 ||
+      originalRequest?._addMenuRetry
+    ) {
+      return Promise.reject(error);
+    }
+
+    // Never refresh the refresh request itself
+    if (originalRequest?.url?.includes("/auth/refresh")) {
+      return Promise.reject(error);
+    }
+
+    originalRequest._addMenuRetry = true;
+
+    try {
+      // Prevent multiple simultaneous refresh calls
+      if (!refreshPromise) {
+        refreshPromise = refreshAccessToken().finally(() => {
+          refreshPromise = null;
+        });
+      }
+
+      const newToken = await refreshPromise;
+
+      if (!newToken) {
+        localStorage.removeItem("token");
+        localStorage.removeItem("refresh_token");
+
+        return Promise.reject(error);
+      }
+
+      originalRequest.headers = originalRequest.headers || {};
+      originalRequest.headers.Authorization = `Bearer ${newToken}`;
+
+      return API(originalRequest);
+
+    } catch (refreshError) {
+      localStorage.removeItem("token");
+      localStorage.removeItem("refresh_token");
+
+      return Promise.reject(refreshError);
+    }
+  }
+);
 
 const categories = ["Healthy", "Protein-Rich", "Tiffin", "Special Diet"];
 
