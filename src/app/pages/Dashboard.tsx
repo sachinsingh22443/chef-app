@@ -410,33 +410,34 @@ useEffect(() => {
             </div>
 
 
-            <motion.button
-              whileTap={{ scale: 0.9 }}
-              onClick={() =>
-                navigate("/notifications")
-              }
-              className="relative flex h-12 w-12 items-center justify-center rounded-[17px] border border-slate-100 bg-white shadow-[0_8px_25px_rgba(15,23,42,0.07)]"
-            >
+                    
+<div className="flex flex-col items-center gap-2">
+  <motion.button
+    whileTap={{ scale: 0.9 }}
+    onClick={() => navigate("/notifications")}
+    className="relative flex h-12 w-12 items-center justify-center rounded-[17px] border border-slate-100 bg-white shadow-[0_8px_25px_rgba(15,23,42,0.07)]"
+  >
+    <Bell className="h-5 w-5 text-slate-700" />
 
-              <Bell className="h-5 w-5 text-slate-700" />
+    {unreadNotificationCount > 0 && (
+      <span className="absolute -right-1 -top-1 flex h-5 min-w-5 items-center justify-center rounded-full bg-red-500 px-1 text-[10px] font-bold text-white ring-2 ring-white">
+        {unreadNotificationCount > 99
+          ? "99+"
+          : unreadNotificationCount}
+      </span>
+    )}
+  </motion.button>
 
-              {unreadNotificationCount > 0 && (
-  <span className="absolute -right-1 -top-1 flex h-5 min-w-5 items-center justify-center rounded-full bg-red-500 px-1 text-[10px] font-bold text-white ring-2 ring-white">
-    {unreadNotificationCount > 99
-      ? "99+"
-      : unreadNotificationCount}
-  </span>
-)}
+  <button
+    type="button"
+    onClick={handleEnableSound}
+    className="whitespace-nowrap rounded-xl bg-orange-500 px-3 py-2 text-[10px] font-bold text-white shadow-md"
+  >
+    {soundEnabled ? "Sound Enabled ✓" : "Enable Sound"}
+  </button>
+</div>
 
-            </motion.button>
-            <button
-  type="button"
-  onClick={handleEnableSound}
-  className="ml-2 rounded-xl bg-orange-500 px-3 py-2 text-xs font-bold text-white"
->
-  {soundEnabled ? "Sound Enabled ✓" : "Enable Sound"}
-</button>
-
+                       
           </div>
 
 
