@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "162806220367",
+    "project_id": "chef-app-a1a5a",
+    "storage_bucket": "chef-app-a1a5a.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:162806220367:android:7fbc84086b267af494cc3a",
+        "android_client_info": {
+          "package_name": "com.chefapp.app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBRjdl4qF-ULlyBKHEG81lPG99YTIcBbCI"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
