@@ -1,5 +1,5 @@
 import { useNavigate } from "react-router";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { MapPin } from "lucide-react";
 import Location from "./Location";
 import axios from "axios";
@@ -37,6 +37,11 @@ import { motion } from "motion/react";
 
 export default function Dashboard() {
   const navigate = useNavigate();
+  const [unreadNotificationCount, setUnreadNotificationCount] = useState(0);
+  const [soundEnabled, setSoundEnabled] = useState(false);
+  
+  const audioContextRef = useRef<AudioContext | null>(null);
+  const soundEnabledRef = useRef(false);
 
   const [stats, setStats] = useState<any>(null);
   const [weeklyData, setWeeklyData] = useState<any[]>([]);
@@ -62,6 +67,156 @@ export default function Dashboard() {
   // =========================================================
   // DASHBOARD API — SAME
   // =========================================================
+  
+const playNotificationSound = () => {
+  try {
+    const AudioContextClass =
+      window.AudioContext ||
+      (window as typeof window & {
+        webkitAudioContext?: typeof AudioContext;
+      }).webkitAudioContext;
+
+    if (!AudioContextClass) return;
+
+    const audioContext =
+      audioContextRef.current ?? new AudioContextClass();
+
+    audioContextRef.current = audioContext;
+
+    if (audioContext.state !== "running") {
+      void audioContext.resume().then(() => {
+        playNotificationSound();
+      });
+      return;
+    }
+
+    [880, 1175].forEach((frequency, index) => {
+      const oscillator = audioContext.createOscillator();
+      const gain = audioContext.createGain();
+      const startTime = audioContext.currentTime + index * 0.18;
+
+      oscillator.type = "sine";
+      oscillator.frequency.value = frequency;
+
+      gain.gain.setValueAtTime(0.001, startTime);
+      gain.gain.exponentialRampToValueAtTime(0.22, startTime + 0.025);
+      gain.gain.exponentialRampToValueAtTime(0.001, startTime + 0.16);
+
+      oscillator.connect(gain);
+      gain.connect(audioContext.destination);
+
+      oscillator.start(startTime);
+      oscillator.stop(startTime + 0.17);
+    });
+  } catch (error) {
+    console.error("Chef notification sound error:", error);
+  }
+};
+
+const handleEnableSound = async () => {
+  try {
+    const AudioContextClass =
+      window.AudioContext ||
+      (window as typeof window & {
+        webkitAudioContext?: typeof AudioContext;
+      }).webkitAudioContext;
+
+    if (!AudioContextClass) {
+      alert("Audio is not supported in this browser.");
+      return;
+    }
+
+    if (!audioContextRef.current) {
+      audioContextRef.current = new AudioContextClass();
+    }
+
+    await audioContextRef.current.resume();
+
+    soundEnabledRef.current = true;
+    setSoundEnabled(true);
+
+    playNotificationSound();
+  } catch (error) {
+    console.error("Unable to enable chef notification sound:", error);
+    alert("Sound could not be enabled. Please try again.");
+  }
+};
+
+
+useEffect(() => {
+  let active = true;
+  let isFirstLoad = true;
+  let previousNotificationIds = new Set<string>();
+
+  const loadUnreadCount = async () => {
+    try {
+      const token = localStorage.getItem("token");
+      if (!token) return;
+
+      const response = await axios.get(
+        "https://chef-backend-qh12.onrender.com/notifications/",
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      if (!active) return;
+
+      const data = response.data;
+
+      const list = Array.isArray(data)
+        ? data
+        : Array.isArray(data?.notifications)
+          ? data.notifications
+          : [];
+
+      const unreadList = list.filter(
+        (item: {
+          id?: string | number;
+          unread?: boolean;
+          is_read?: boolean;
+        }) => item.unread === true || item.is_read === false
+      );
+
+      setUnreadNotificationCount(unreadList.length);
+
+      const currentIds = new Set<string>(
+        unreadList
+          .filter((item: { id?: string | number }) => item.id != null)
+          .map((item: { id: string | number }) => String(item.id))
+      );
+
+      if (!isFirstLoad) {
+        const hasNewNotification = [...currentIds].some(
+          (id) => !previousNotificationIds.has(id)
+        );
+
+        if (hasNewNotification && soundEnabledRef.current) {
+          playNotificationSound();
+        }
+      }
+
+      previousNotificationIds = currentIds;
+      isFirstLoad = false;
+    } catch (error) {
+      console.error("Unable to load chef notifications:", error);
+    }
+  };
+
+  void loadUnreadCount();
+
+  const intervalId = window.setInterval(() => {
+    void loadUnreadCount();
+  }, 10000);
+
+  return () => {
+    active = false;
+    window.clearInterval(intervalId);
+  };
+}, []);
+
 
   const fetchDashboard = async () => {
     try {
@@ -265,9 +420,22 @@ export default function Dashboard() {
 
               <Bell className="h-5 w-5 text-slate-700" />
 
-              <span className="absolute right-2.5 top-2.5 h-2.5 w-2.5 rounded-full bg-orange-500 ring-2 ring-white" />
+              {unreadNotificationCount > 0 && (
+  <span className="absolute -right-1 -top-1 flex h-5 min-w-5 items-center justify-center rounded-full bg-red-500 px-1 text-[10px] font-bold text-white ring-2 ring-white">
+    {unreadNotificationCount > 99
+      ? "99+"
+      : unreadNotificationCount}
+  </span>
+)}
 
             </motion.button>
+            <button
+  type="button"
+  onClick={handleEnableSound}
+  className="ml-2 rounded-xl bg-orange-500 px-3 py-2 text-xs font-bold text-white"
+>
+  {soundEnabled ? "Sound Enabled ✓" : "Enable Sound"}
+</button>
 
           </div>
 
