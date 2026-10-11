@@ -71,6 +71,7 @@ export default function Login() {
         "token",
         res.data.access_token
       );
+      window.dispatchEvent(new Event("chef-login-success"));
 
       // ==========================================
       // SAVE REFRESH TOKEN

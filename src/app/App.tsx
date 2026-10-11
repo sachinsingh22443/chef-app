@@ -22,7 +22,20 @@ export default function App() {
     let cancelled = false;
 
     const setupPushNotifications = async () => {
+
+
       try {
+
+        // Create a fresh Android channel for audible order notifications.
+if (Capacitor.getPlatform() === "android") {
+  await PushNotifications.createChannel({
+    id: "chef_order_alerts_v2",
+    name: "New Order Alerts",
+    description: "Sound alerts for new chef orders",
+    importance: 5,
+    visibility: 1,
+  });
+}
         // Register listeners before requesting the device token.
         registrationListener = await PushNotifications.addListener(
           "registration",
