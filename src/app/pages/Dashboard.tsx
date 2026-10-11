@@ -199,21 +199,21 @@ useEffect(() => {
   try {
     const permission = await LocalNotifications.checkPermissions();
 
-    if (permission.display === "granted") {
-      await LocalNotifications.schedule({
-        notifications: [
-          {
-            id: Math.floor(Date.now() % 2147483647),
-            title: "New Notification",
-            body: "You have a new notification in Chef App.",
-            channelId: "chef_foreground_alerts",
-            schedule: {
-              at: new Date(Date.now() + 1000),
-            },
-          },
-        ],
-      });
-    }
+if (permission.display === "granted") {
+  await LocalNotifications.schedule({
+    notifications: [
+      {
+        id: Math.floor(Date.now() % 2147483647),
+        title: "New Notification",
+        body: "You have a new notification in Chef App.",
+        channelId: "chef_foreground_alerts",
+        schedule: {
+          at: new Date(Date.now() + 1000),
+        },
+      },
+    ],
+  });
+}
   } catch (error) {
     console.error("Native notification sound error:", error);
   }
