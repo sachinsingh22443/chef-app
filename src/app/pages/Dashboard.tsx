@@ -2,6 +2,8 @@ import { useNavigate } from "react-router";
 import { useEffect, useRef, useState } from "react";
 import { MapPin } from "lucide-react";
 import Location from "./Location";
+import { Capacitor } from "@capacitor/core";
+import { LocalNotifications } from "@capacitor/local-notifications";
 import axios from "axios";
 
 import {
@@ -193,9 +195,31 @@ useEffect(() => {
           (id) => !previousNotificationIds.has(id)
         );
 
-        if (hasNewNotification && soundEnabledRef.current) {
-          playNotificationSound();
-        }
+        if (hasNewNotification && Capacitor.isNativePlatform()) {
+  try {
+    const permission = await LocalNotifications.checkPermissions();
+
+    if (permission.display === "granted") {
+      await LocalNotifications.schedule({
+        notifications: [
+          {
+            id: Math.floor(Date.now() % 2147483647),
+            title: "New Notification",
+            body: "You have a new notification in Chef App.",
+            channelId: "chef_foreground_alerts",
+            schedule: {
+              at: new Date(Date.now() + 1000),
+            },
+          },
+        ],
+      });
+    }
+  } catch (error) {
+    console.error("Native notification sound error:", error);
+  }
+} else if (hasNewNotification && soundEnabledRef.current) {
+  playNotificationSound();
+}
       }
 
       previousNotificationIds = currentIds;
