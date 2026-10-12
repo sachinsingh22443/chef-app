@@ -308,12 +308,11 @@ export default function Orders() {
                   </p>
                 </div>
                 <div className="flex gap-1.5">
-                  {[1,2,3,4,5].map((step) => {
+                  {[1,2,3].map((step) => {
                     const current =
                       order.status === "accepted" ? 1 :
                       order.status === "preparing" ? 2 :
-                      order.status === "ready" ? 3 :
-                      order.status === "out_for_delivery" ? 4 : 5;
+                      order.status === "ready" ? 3 : 0;
                     return <div key={step} className={`h-1.5 flex-1 rounded-full ${step <= current ? "bg-gradient-to-r from-orange-500 to-violet-600" : "bg-slate-200"}`} />;
                   })}
                 </div>
@@ -376,12 +375,7 @@ export default function Orders() {
                   {loadingId === order.id ? "Updating..." : "Mark Ready →"}
                 </button>
               )}
-              {order.status === "ready" && (
-                <button onClick={(e) => { e.stopPropagation(); updateStatus(order.id, "out_for_delivery"); }} disabled={loadingId === order.id}
-                  className="w-full rounded-2xl bg-orange-500 py-3.5 text-sm font-black text-white shadow-lg shadow-orange-500/15 transition hover:bg-orange-600 disabled:opacity-60">
-                  {loadingId === order.id ? "Updating..." : "Assign Delivery Partner →"}
-                </button>
-              )}
+              
               {order.status === "out_for_delivery" && (
                 <button onClick={(e) => { e.stopPropagation(); updateStatus(order.id, "delivered"); }} disabled={loadingId === order.id}
                   className="w-full rounded-2xl bg-slate-900 py-3.5 text-sm font-black text-white transition hover:bg-slate-800 disabled:opacity-60">
