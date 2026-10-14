@@ -301,10 +301,9 @@ export default function Orders() {
                 <div className="mb-2 flex items-center justify-between">
                   <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Kitchen progress</p>
                   <p className="text-[10px] font-bold text-slate-500">
-                    {order.status === "accepted" ? "1 / 5" :
-                     order.status === "preparing" ? "2 / 5" :
-                     order.status === "ready" ? "3 / 5" :
-                     order.status === "out_for_delivery" ? "4 / 5" : "5 / 5"}
+                    {order.status === "accepted" ? "1 / 3" :
+                     order.status === "preparing" ? "2 / 3" :
+                     order.status === "ready" ? "3 / 3" : "0 / 3"}
                   </p>
                 </div>
                 <div className="flex gap-1.5">
@@ -377,11 +376,10 @@ export default function Orders() {
               )}
               
               {order.status === "out_for_delivery" && (
-                <button onClick={(e) => { e.stopPropagation(); updateStatus(order.id, "delivered"); }} disabled={loadingId === order.id}
-                  className="w-full rounded-2xl bg-slate-900 py-3.5 text-sm font-black text-white transition hover:bg-slate-800 disabled:opacity-60">
-                  {loadingId === order.id ? "Updating..." : "Mark Delivered ✓"}
-                </button>
-              )}
+  <div className="w-full rounded-2xl bg-orange-50 px-4 py-3.5 text-center text-sm font-bold text-orange-700">
+    🚚 Order is with Delivery Partner
+  </div>
+)}
             </div>
           )}
         </div>

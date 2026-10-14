@@ -98,9 +98,17 @@ export default function OrderDetail() {
   };
 
   const nextStatus =
-    currentStatusIndex < statusFlow.length - 1
-      ? statusFlow[currentStatusIndex + 1]
-      : null;
+  ["pending", "accepted", "preparing"].includes(status)
+    ? statusFlow.find(
+        (step) =>
+          step.key ===
+          ({
+            pending: "accepted",
+            accepted: "preparing",
+            preparing: "ready",
+          } as Record<string, string>)[status]
+      ) || null
+    : null;
 
   const getProgressWidth = () => {
     if (statusFlow.length <= 1) return "0%";
