@@ -35,6 +35,8 @@ import SubscriptionPlans from "./pages/SubscriptionPlans";
 import SubscriptionPlanMenuCycle from "./pages/SubscriptionPlanMenuCycle";
 import Subscribers from "./pages/Subscribers";
 import DeleteAccount from "./pages/DeleteAccount";
+import ExploreProducts from "./pages/explore/ExploreProducts";
+import AddExploreProduct from "./pages/explore/AddExploreProduct";
 
 import NotFound from "./pages/NotFound";
 
@@ -81,6 +83,9 @@ export const router = createBrowserRouter([
       { path: "menu/cycle", element: <MenuCycle /> },
       { path: "menu/add", element: <AddMenuItem /> },
       { path: "menu/edit/:itemId", element: <EditMenuItem /> },
+
+      { path: "explore", element: <ExploreProducts /> },
+      { path: "explore/add", element: <AddExploreProduct /> },
 
       { path: "tomorrow-special", element: <TomorrowSpecial /> },
       { path: "special-history", element: <SpecialHistory /> },

@@ -9,6 +9,7 @@ import {
   ShoppingBag,
   Menu as MenuIcon,
   User,
+  Compass,
 } from "lucide-react";
 
 import { useEffect, useRef, useState } from "react";
@@ -687,6 +688,12 @@ export default function MainLayout() {
       icon: MenuIcon,
       label: "Menu",
     },
+
+    {
+  path: "/app/explore",
+  icon: Compass,
+  label: "Explore",
+},
     {
       path: "/app/profile",
       icon: User,
