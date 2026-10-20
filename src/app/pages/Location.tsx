@@ -3,7 +3,13 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { Geolocation } from "@capacitor/geolocation";
 import { Loader } from "@googlemaps/js-api-loader";
 
-declare const google: any;
+declare global {
+  interface Window {
+    Capacitor?: {
+      isNativePlatform?: () => boolean;
+    };
+  }
+}
 
 type Props = {
   onLocationSelect: (lat: number, lng: number, city: string) => void;
@@ -15,24 +21,37 @@ type Position = {
   lng: number;
 };
 
+type PlaceSuggestion = {
+  place_id: string;
+  description: string;
+};
+
 const getSavedPosition = (): Position | null => {
-  const savedLat = localStorage.getItem("lat");
-  const savedLng = localStorage.getItem("lng");
+  try {
+    const savedLat = localStorage.getItem("lat");
+    const savedLng = localStorage.getItem("lng");
 
-  if (savedLat === null || savedLng === null) return null;
+    if (savedLat === null || savedLng === null) return null;
 
-  const lat = Number(savedLat);
-  const lng = Number(savedLng);
+    const lat = Number(savedLat);
+    const lng = Number(savedLng);
 
-  if (
-    !Number.isFinite(lat) ||
-    !Number.isFinite(lng) ||
-    (lat === 0 && lng === 0)
-  ) {
+    if (
+      !Number.isFinite(lat) ||
+      !Number.isFinite(lng) ||
+      lat < -90 ||
+      lat > 90 ||
+      lng < -180 ||
+      lng > 180 ||
+      (lat === 0 && lng === 0)
+    ) {
+      return null;
+    }
+
+    return { lat, lng };
+  } catch {
     return null;
   }
-
-  return { lat, lng };
 };
 
 const getBrowserPosition = (
@@ -40,29 +59,33 @@ const getBrowserPosition = (
 ): Promise<GeolocationPosition> =>
   new Promise((resolve, reject) => {
     if (!navigator.geolocation) {
-      reject(new Error("Location is not supported on this device"));
+      reject(new Error("Location is not supported on this device."));
       return;
     }
 
     navigator.geolocation.getCurrentPosition(resolve, reject, options);
   });
 
-export default function Location({
-  onLocationSelect,
-  onClose,
-}: Props) {
+export default function Location({ onLocationSelect, onClose }: Props) {
   const [loading, setLoading] = useState(false);
   const [manualLocation, setManualLocation] = useState("");
   const [error, setError] = useState("");
-  const [suggestions, setSuggestions] = useState<any[]>([]);
+  const [suggestions, setSuggestions] = useState<PlaceSuggestion[]>([]);
   const [loader, setLoader] = useState<Loader | null>(null);
 
   const loadingRef = useRef(false);
   const searchRequestRef = useRef(0);
 
   useEffect(() => {
+    const apiKey = import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
+
+    if (!apiKey) {
+      console.error("VITE_GOOGLE_MAPS_API_KEY is missing.");
+      return;
+    }
+
     const mapsLoader = new Loader({
-      apiKey: import.meta.env.VITE_GOOGLE_MAPS_API_KEY,
+      apiKey,
       version: "weekly",
       libraries: ["places"],
     });
@@ -77,16 +100,25 @@ export default function Location({
     setLoading(true);
     setError("");
 
-    try {
-      const isNative = !!window.Capacitor?.isNativePlatform();
-      const savedPosition = getSavedPosition();
-      const savedName =
-        localStorage.getItem("location_name") || "Current Location";
+    const savedPosition = getSavedPosition();
+    const savedName =
+      localStorage.getItem("location_name") || "Saved Location";
 
-      // Start Google Maps loading while location is being fetched.
-      const mapsPromise = loader
-        ? loader.load()
-        : Promise.reject(new Error("Google Maps loader not ready"));
+    // 1. Show the previously saved location immediately.
+    // Do not make the user wait for fresh GPS to see it.
+    if (savedPosition) {
+      onLocationSelect(
+        savedPosition.lat,
+        savedPosition.lng,
+        savedName
+      );
+    }
+
+    try {
+      const isNative = !!window.Capacitor?.isNativePlatform?.();
+
+      // 2. Start loading Google Maps in parallel with GPS.
+      const mapsPromise = loader ? loader.load() : null;
 
       let position: Position;
 
@@ -104,11 +136,13 @@ export default function Location({
           permission.location !== "granted" &&
           permission.coarseLocation !== "granted"
         ) {
-          throw new Error("Location permission denied");
+          throw new Error(
+            "Location permission denied. Please allow location access in settings."
+          );
         }
 
         try {
-          // Fast path: use a recent cached position if available.
+          // Fast path: allow a recent cached device location.
           const result = await Geolocation.getCurrentPosition({
             enableHighAccuracy: false,
             timeout: 5000,
@@ -120,7 +154,7 @@ export default function Location({
             lng: result.coords.longitude,
           };
         } catch {
-          // Fallback: request fresh, more accurate GPS.
+          // Fallback: request a fresh, more accurate location.
           const result = await Geolocation.getCurrentPosition({
             enableHighAccuracy: true,
             timeout: 15000,
@@ -158,11 +192,10 @@ export default function Location({
         }
       }
 
-      // Save coordinates immediately.
+      // 3. Save and display coordinates immediately after GPS returns.
       localStorage.setItem("lat", String(position.lat));
       localStorage.setItem("lng", String(position.lng));
 
-      // Use saved address as a temporary label until geocoding finishes.
       const temporaryName = savedPosition
         ? savedName
         : "Current Location";
@@ -173,27 +206,36 @@ export default function Location({
         temporaryName
       );
 
+      // 4. Resolve the address separately; GPS coordinates are
+      // already available even if address lookup is slow.
       let locationName = temporaryName;
 
-      try {
-        await mapsPromise;
+      if (mapsPromise) {
+        try {
+          await mapsPromise;
 
-        const geocoder = new google.maps.Geocoder();
+          const geocoder = new google.maps.Geocoder();
 
-        locationName = await new Promise<string>((resolve) => {
-          geocoder.geocode(
-            { location: position },
-            (results: any, status: any) => {
-              resolve(
-                status === "OK" && results?.[0]
-                  ? results[0].formatted_address
-                  : "Current Location"
-              );
-            }
+          const address = await new Promise<string>((resolve) => {
+            geocoder.geocode(
+              { location: position },
+              (results, status) => {
+                resolve(
+                  status === "OK" && results?.[0]
+                    ? results[0].formatted_address
+                    : temporaryName
+                );
+              }
+            );
+          });
+
+          locationName = address || temporaryName;
+        } catch (geocodingError) {
+          console.warn(
+            "Address lookup failed; keeping coordinates.",
+            geocodingError
           );
-        });
-      } catch {
-        // GPS coordinates remain available if geocoding fails.
+        }
       }
 
       localStorage.setItem("location_name", locationName);
@@ -205,18 +247,18 @@ export default function Location({
       );
 
       onClose();
-    } catch (err: any) {
-      const savedPosition = getSavedPosition();
+    } catch (err: unknown) {
+      const message =
+        err instanceof Error
+          ? err.message
+          : "Unable to fetch location. Please try again.";
 
       if (savedPosition) {
-        // Preserve the previously saved location if fresh GPS fails.
         setError(
           "Current location unavailable. Your saved location is still available."
         );
       } else {
-        setError(
-          err?.message || "Unable to fetch location. Please try again."
-        );
+        setError(message);
       }
     } finally {
       loadingRef.current = false;
@@ -238,26 +280,32 @@ export default function Location({
 
         if (requestId !== searchRequestRef.current) return;
 
-        const service =
-          new google.maps.places.AutocompleteService();
+        const service = new google.maps.places.AutocompleteService();
 
         service.getPlacePredictions(
           {
             input: query.trim(),
             componentRestrictions: { country: "in" },
           },
-          (predictions: any, status: any) => {
+          (predictions, status) => {
             if (requestId !== searchRequestRef.current) return;
 
             setSuggestions(
-              status === "OK" && predictions ? predictions : []
+              status === google.maps.places.PlacesServiceStatus.OK &&
+                predictions
+                ? predictions.map((item) => ({
+                    place_id: item.place_id,
+                    description: item.description,
+                  }))
+                : []
             );
           }
         );
-      } catch {
+      } catch (err) {
+        console.error("Place search failed:", err);
         if (requestId === searchRequestRef.current) {
           setSuggestions([]);
-          setError("Location search failed");
+          setError("Location search failed. Please try again.");
         }
       }
     },
@@ -266,7 +314,10 @@ export default function Location({
 
   const handlePlaceSelect = useCallback(
     async (placeId: string, description: string) => {
-      if (!loader) return;
+      if (!loader) {
+        setError("Map service is still loading. Please try again.");
+        return;
+      }
 
       setError("");
 
@@ -277,24 +328,21 @@ export default function Location({
 
         const position = await new Promise<Position>(
           (resolve, reject) => {
-            geocoder.geocode(
-              { placeId },
-              (results: any, status: any) => {
-                const result = results?.[0];
+            geocoder.geocode({ placeId }, (results, status) => {
+              const result = results?.[0];
 
-                if (status !== "OK" || !result) {
-                  reject(new Error("Unable to find this location"));
-                  return;
-                }
-
-                const loc = result.geometry.location;
-
-                resolve({
-                  lat: loc.lat(),
-                  lng: loc.lng(),
-                });
+              if (status !== "OK" || !result) {
+                reject(new Error("Unable to find this location."));
+                return;
               }
-            );
+
+              const loc = result.geometry.location;
+
+              resolve({
+                lat: loc.lat(),
+                lng: loc.lng(),
+              });
+            });
           }
         );
 
@@ -312,9 +360,11 @@ export default function Location({
         );
 
         onClose();
-      } catch (err: any) {
+      } catch (err: unknown) {
         setError(
-          err?.message || "Unable to select this location"
+          err instanceof Error
+            ? err.message
+            : "Unable to select this location."
         );
       }
     },
@@ -338,18 +388,14 @@ export default function Location({
 
       <button
         type="button"
-        onClick={handleAutoLocation}
+        onClick={() => void handleAutoLocation()}
         disabled={loading}
         className="mb-4 w-full rounded-xl bg-orange-500 py-3 font-medium text-white disabled:opacity-50"
       >
-        {loading
-          ? "Detecting location..."
-          : "📍 Use Current Location"}
+        {loading ? "Detecting location..." : "📍 Use Current Location"}
       </button>
 
-      <div className="mb-3 text-center text-gray-400">
-        OR
-      </div>
+      <div className="mb-3 text-center text-gray-400">OR</div>
 
       <input
         type="text"
@@ -367,7 +413,7 @@ export default function Location({
 
       {suggestions.length > 0 && (
         <div className="mb-3 max-h-52 overflow-auto rounded-xl border">
-          {suggestions.map((item: any) => (
+          {suggestions.map((item) => (
             <button
               type="button"
               key={item.place_id}
