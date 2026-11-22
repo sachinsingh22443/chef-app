@@ -69,6 +69,11 @@ export const router = createBrowserRouter([
   path: "/delete-account",
   element: <DeleteAccount />,
 },
+
+{
+  path: "/privacy-policy",
+  element: <Privacy />,
+},
   // 🔐 MAIN (/app)
   {
     path: "/app",
