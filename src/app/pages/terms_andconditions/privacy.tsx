@@ -252,7 +252,7 @@ export default function Privacy() {
             </p>
 
             <a
-              href="mailto:REPLACE_WITH_SUPPORT_EMAIL"
+              href="mailto:sachinsingh22443@gmail.com"
               className="mt-2 inline-block break-all text-base font-semibold text-emerald-400 hover:text-emerald-300"
             >
               sachinsingh22443@gmail.com
