@@ -72,7 +72,7 @@ export const router = createBrowserRouter([
 
 {
   path: "/privacy-policy",
-  element: <Privacy />,
+  element: <Privaci />,
 },
   // 🔐 MAIN (/app)
   {
